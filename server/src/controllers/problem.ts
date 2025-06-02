@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import Problem from '../models/Problem';
+import { AuthRequest, ProblemQuery } from '../types';
 
 // @desc    Create new problem
 // @route   POST /api/problems
 // @access  Private/Admin
-export const createProblem = async (req: Request, res: Response) => {
+export const createProblem = async (req: AuthRequest, res: Response) => {
   try {
     const problem = await Problem.create({
       ...req.body,
-      createdBy: (req as any).user.id,
+      createdBy: req.user.id,
     });
 
     res.status(201).json({
@@ -29,21 +30,21 @@ export const createProblem = async (req: Request, res: Response) => {
 export const getProblems = async (req: Request, res: Response) => {
   try {
     const { difficulty, category, search } = req.query;
-    const query: any = {};
+    const query: ProblemQuery = {};
 
     // Filter by difficulty
     if (difficulty) {
-      query.difficulty = difficulty;
+      query.difficulty = difficulty as string;
     }
 
     // Filter by category
     if (category) {
-      query.category = { $in: [category] };
+      query.category = category as string;
     }
 
     // Search by title
     if (search) {
-      query.title = { $regex: search, $options: 'i' };
+      query.title = { $regex: search as string, $options: 'i' };
     }
 
     const problems = await Problem.find(query)

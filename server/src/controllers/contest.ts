@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 import Contest from '../models/Contest';
 import Submission from '../models/Submission';
+import { AuthRequest, ContestQuery, SubmissionScore, ScoringCriteria } from '../types';
 
 // @desc    Create new contest
 // @route   POST /api/contests
 // @access  Private/Admin
-export const createContest = async (req: Request, res: Response) => {
+export const createContest = async (req: AuthRequest, res: Response) => {
   try {
     const contest = await Contest.create({
       ...req.body,
-      createdBy: (req as any).user.id,
+      createdBy: req.user.id,
     });
 
     res.status(201).json({
@@ -30,14 +31,14 @@ export const createContest = async (req: Request, res: Response) => {
 export const getContests = async (req: Request, res: Response) => {
   try {
     const { status, visibility } = req.query;
-    const query: any = {};
+    const query: ContestQuery = {};
 
     if (status) {
-      query.status = status;
+      query.status = status as string;
     }
 
     if (visibility) {
-      query.visibility = visibility;
+      query.visibility = visibility as string;
     }
 
     const contests = await Contest.find(query)
@@ -283,15 +284,13 @@ export const updateScores = async (req: Request, res: Response) => {
 };
 
 // Helper function to calculate submission score
-const calculateSubmissionScore = (submission: any, criteria: any) => {
-  if (submission.status !== 'accepted') return 0;
-
-  const timeScore = Math.max(0, 1 - submission.runtime / 10000) * criteria.timeWeight;
-  const memoryScore = Math.max(0, 1 - submission.memory / 500000) * criteria.memoryWeight;
-  const difficultyScore =
-    getDifficultyScore(submission.problem.difficulty) * criteria.difficultyWeight;
-
-  return (timeScore + memoryScore + difficultyScore) * 100;
+const calculateSubmissionScore = (submission: SubmissionScore, criteria: ScoringCriteria): number => {
+  return (
+    submission.accuracy * criteria.accuracy +
+    submission.timeComplexity * criteria.timeComplexity +
+    submission.spaceComplexity * criteria.spaceComplexity +
+    submission.codeQuality * criteria.codeQuality
+  );
 };
 
 // Helper function to get difficulty score
