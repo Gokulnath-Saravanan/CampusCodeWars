@@ -284,7 +284,10 @@ export const updateScores = async (req: Request, res: Response) => {
 };
 
 // Helper function to calculate submission score
-const calculateSubmissionScore = (submission: SubmissionScore, criteria: ScoringCriteria): number => {
+const calculateSubmissionScore = (
+  submission: SubmissionScore,
+  criteria: ScoringCriteria
+): number => {
   return (
     submission.accuracy * criteria.accuracy +
     submission.timeComplexity * criteria.timeComplexity +

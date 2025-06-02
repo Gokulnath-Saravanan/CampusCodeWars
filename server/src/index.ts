@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/db';
+import logger from './utils/logger';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -19,7 +20,7 @@ dotenv.config();
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'PORT'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    console.error(`Error: ${envVar} is not defined in environment variables`);
+    logger.error(`Error: ${envVar} is not defined in environment variables`);
     process.exit(1);
   }
 }
@@ -66,7 +67,7 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
@@ -80,10 +81,10 @@ const startServer = async () => {
 
     // Start listening for requests
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };

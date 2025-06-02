@@ -1,9 +1,30 @@
 import { Request, Response } from 'express';
 import Submission from '../models/Submission';
 import Problem from '../models/Problem';
+import { AuthRequest } from '../types';
+import logger from '../utils/logger';
+
+interface TestCase {
+  input: string;
+  expectedOutput: string;
+}
+
+interface TestResult {
+  passed: boolean;
+  output: string;
+  expectedOutput: string;
+  runtime: number;
+  memory: number;
+}
+
+interface ExecutionResult {
+  output: string;
+  runtime: number;
+  memory: number;
+}
 
 // @desc    Submit code for a problem
-export const submitCode = async (req: Request, res: Response) => {
+export const submitCode = async (req: AuthRequest, res: Response) => {
   try {
     const { code, problemId } = req.body;
 
@@ -28,7 +49,7 @@ export const submitCode = async (req: Request, res: Response) => {
 
     // Run test cases
     const testResults = await Promise.all(
-      problem.testCases.map(async (test: any) => {
+      problem.testCases.map(async (test: TestCase) => {
         // Execute code against test case
         const executionResult = await executeCode(submission.code, test.input);
         return {
@@ -49,13 +70,13 @@ export const submitCode = async (req: Request, res: Response) => {
 
     res.json(submission);
   } catch (error) {
-    console.error('Error submitting code:', error);
+    logger.error('Error submitting code:', error);
     res.status(500).json({ message: 'Error submitting code' });
   }
 };
 
 // @desc    Get all submissions for a user
-export const getUserSubmissions = async (req: Request, res: Response) => {
+export const getUserSubmissions = async (req: AuthRequest, res: Response) => {
   try {
     const submissions = await Submission.find({ user: req.user.id })
       .populate('problem', 'title difficulty')
@@ -63,7 +84,7 @@ export const getUserSubmissions = async (req: Request, res: Response) => {
 
     res.json(submissions);
   } catch (error) {
-    console.error('Error getting user submissions:', error);
+    logger.error('Error getting user submissions:', error);
     res.status(500).json({ message: 'Error getting user submissions' });
   }
 };
@@ -81,13 +102,13 @@ export const getSubmissionById = async (req: Request, res: Response) => {
 
     res.json(submission);
   } catch (error) {
-    console.error('Error getting submission:', error);
+    logger.error('Error getting submission:', error);
     res.status(500).json({ message: 'Error getting submission' });
   }
 };
 
 // Helper function to execute code
-const executeCode = async (_code: string, _input: string) => {
+const executeCode = async (_code: string, _input: string): Promise<ExecutionResult> => {
   // TODO: Implement actual code execution
   // For now, return mock results
   return {
