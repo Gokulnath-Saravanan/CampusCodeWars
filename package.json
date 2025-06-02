@@ -10,11 +10,19 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install && cd ../server && npm install"
   },
-  "keywords": ["coding", "competition", "campus", "mern"],
+  "keywords": [
+    "coding",
+    "competition",
+    "campus",
+    "mern"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "nodemon": "^3.0.3"
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.1",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.5.3"
   }
-} 
+}
