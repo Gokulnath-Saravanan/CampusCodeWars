@@ -1,15 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-export interface IUser extends mongoose.Document {
-  username: string;
-  email: string;
-  password: string;
-  role: 'user' | 'admin';
-  comparePassword(candidatePassword: string): Promise<boolean>;
-  getSignedJwtToken: () => string;
-}
+import jwt, { SignOptions } from 'jsonwebtoken';
+import { IUser } from '../types';
 
 const userSchema = new mongoose.Schema(
   {
@@ -50,15 +42,22 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+userSchema.methods.matchPassword = async function (candidatePassword: string): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 // Sign JWT and return
-userSchema.methods.getSignedJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
+userSchema.methods.getSignedJwtToken = function (): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+  
+  const options: SignOptions = {
+    expiresIn: process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 86400 // 24 hours in seconds
+  };
+  
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, options);
 };
 
-export default mongoose.model<IUser>('User', userSchema);
+const User = mongoose.model<IUser>('User', userSchema);
+export default User;

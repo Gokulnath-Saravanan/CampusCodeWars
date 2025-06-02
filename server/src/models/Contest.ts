@@ -1,32 +1,11 @@
 import mongoose from 'mongoose';
-
-export interface IContest extends mongoose.Document {
-  title: string;
-  description: string;
-  startTime: Date;
-  endTime: Date;
-  problems: mongoose.Types.ObjectId[];
-  participants: {
-    user: mongoose.Types.ObjectId;
-    score: number;
-    rank?: number;
-    joinedAt: Date;
-  }[];
-  createdBy: mongoose.Types.ObjectId;
-  status: 'upcoming' | 'ongoing' | 'completed';
-  isPublic: boolean;
-  rules: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { IContest } from '../types';
 
 const contestSchema = new mongoose.Schema(
   {
     title: {
       type: String,
       required: true,
-      unique: true,
-      trim: true,
     },
     description: {
       type: String,
@@ -40,53 +19,90 @@ const contestSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    problems: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Problem',
-      },
-    ],
-    participants: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-        },
-        score: {
-          type: Number,
-          default: 0,
-        },
-        rank: Number,
-        joinedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+    isRegistrationOpen: {
+      type: Boolean,
+      default: true,
     },
     status: {
       type: String,
       enum: ['upcoming', 'ongoing', 'completed'],
       default: 'upcoming',
     },
-    isPublic: {
-      type: Boolean,
-      default: true,
+    visibility: {
+      type: String,
+      enum: ['public', 'private'],
+      default: 'public',
     },
-    rules: [
-      {
-        type: String,
+    problems: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Problem',
+    }],
+    participants: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
       },
-    ],
+      score: {
+        type: Number,
+        default: 0,
+      },
+      rank: {
+        type: Number,
+      },
+      joinedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
+    scoringCriteria: {
+      accuracy: {
+        type: Number,
+        required: true,
+        default: 40,
+      },
+      timeComplexity: {
+        type: Number,
+        required: true,
+        default: 20,
+      },
+      spaceComplexity: {
+        type: Number,
+        required: true,
+        default: 20,
+      },
+      codeQuality: {
+        type: Number,
+        required: true,
+        default: 20,
+      },
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+interface IParticipant {
+  user: mongoose.Types.ObjectId;
+  score: number;
+  rank?: number;
+  joinedAt: Date;
+}
+
+// Add methods if needed
+contestSchema.methods.updateParticipantScore = async function(userId: string, newScore: number) {
+  const participant = this.participants.find((p: IParticipant) => p.user.toString() === userId);
+  if (participant) {
+    participant.score = newScore;
+    await this.save();
+  }
+};
 
 // Update contest status based on time
 contestSchema.pre('save', function (next) {

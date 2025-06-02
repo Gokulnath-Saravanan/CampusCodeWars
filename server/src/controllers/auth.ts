@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import { AuthRequest } from '../types';
+import logger from '../utils/logger';
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -39,9 +40,10 @@ export const register = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    logger.error('Registration error:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error registering user',
     });
   }
 };
@@ -55,28 +57,33 @@ export const login = async (req: Request, res: Response) => {
 
     // Validate email & password
     if (!email || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
-        error: 'Please provide an email and password',
+        error: 'Please provide email and password',
       });
+      return;
     }
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
+
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
+      return;
     }
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
+
     if (!isMatch) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
+      return;
     }
 
     // Create token
@@ -93,9 +100,10 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    logger.error('Login error:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error logging in',
     });
   }
 };
@@ -105,16 +113,33 @@ export const login = async (req: Request, res: Response) => {
 // @access  Private
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
-    const user = await User.findById(req.user.id);
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: 'Not authorized',
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+      return;
+    }
 
     res.status(200).json({
       success: true,
       data: user,
     });
   } catch (error) {
+    logger.error('Get me error:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error getting user information',
     });
   }
 };

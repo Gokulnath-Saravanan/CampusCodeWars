@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -32,8 +32,10 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.CLIENT_URL || '*',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
 
@@ -66,9 +68,15 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response) => {
-  logger.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  logger.error('Unhandled error:', err.message);
+  if (err.stack) {
+    logger.error('Stack trace:', err.stack);
+  }
+  res.status(500).json({
+    success: false,
+    error: 'Server Error'
+  });
 });
 
 // Start server
@@ -80,11 +88,32 @@ const startServer = async () => {
     await connectDB();
 
     // Start listening for requests
-    app.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}`);
+    const server = app.listen(PORT, () => {
+      logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
-  } catch (error) {
-    logger.error('Failed to start server:', error);
+
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (err: Error) => {
+      logger.error('Unhandled Rejection:', err.message);
+      if (err.stack) {
+        logger.error('Stack trace:', err.stack);
+      }
+      // Close server & exit process
+      server.close(() => process.exit(1));
+    });
+
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (err: Error) => {
+      logger.error('Uncaught Exception:', err.message);
+      if (err.stack) {
+        logger.error('Stack trace:', err.stack);
+      }
+      // Close server & exit process
+      server.close(() => process.exit(1));
+    });
+  } catch (err) {
+    const error = err as Error;
+    logger.error('Failed to start server:', error.message);
     process.exit(1);
   }
 };

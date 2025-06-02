@@ -1,15 +1,24 @@
 import { Request, Response } from 'express';
 import Problem from '../models/Problem';
 import { AuthRequest, ProblemQuery } from '../types';
+import logger from '../utils/logger';
 
 // @desc    Create new problem
 // @route   POST /api/problems
 // @access  Private/Admin
 export const createProblem = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: 'Not authorized'
+      });
+      return;
+    }
+
     const problem = await Problem.create({
       ...req.body,
-      createdBy: req.user.id,
+      createdBy: req.user._id,
     });
 
     res.status(201).json({
@@ -17,9 +26,10 @@ export const createProblem = async (req: AuthRequest, res: Response) => {
       data: problem,
     });
   } catch (error) {
+    logger.error('Error creating problem:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error creating problem',
     });
   }
 };

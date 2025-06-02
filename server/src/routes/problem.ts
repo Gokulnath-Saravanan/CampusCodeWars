@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect, authorize } from '../middleware/auth';
 import Problem from '../models/Problem';
+import { createProblem } from '../controllers/problem';
 
 const router = express.Router();
 
@@ -32,17 +33,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new problem (admin only)
-router.post('/', protect, authorize('admin'), async (req, res) => {
-  try {
-    const problem = await Problem.create({
-      ...req.body,
-      createdBy: req.user!._id,
-    });
-    res.status(201).json(problem);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating problem' });
-  }
-});
+router.post('/', protect, authorize('admin'), createProblem);
 
 // Update problem (admin only)
 router.put('/:id', protect, authorize('admin'), async (req, res) => {

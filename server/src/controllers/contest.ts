@@ -1,16 +1,26 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Contest from '../models/Contest';
 import Submission from '../models/Submission';
-import { AuthRequest, ContestQuery, SubmissionScore, ScoringCriteria } from '../types';
+import { AuthRequest, ContestQuery, SubmissionScore, ScoringCriteria, IContest, ISubmission } from '../types';
+import logger from '../utils/logger';
 
 // @desc    Create new contest
 // @route   POST /api/contests
 // @access  Private/Admin
 export const createContest = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: 'Not authorized'
+      });
+      return;
+    }
+
     const contest = await Contest.create({
       ...req.body,
-      createdBy: req.user.id,
+      createdBy: req.user._id,
     });
 
     res.status(201).json({
@@ -18,9 +28,10 @@ export const createContest = async (req: AuthRequest, res: Response) => {
       data: contest,
     });
   } catch (error) {
+    logger.error('Error creating contest:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error creating contest',
     });
   }
 };
@@ -148,53 +159,61 @@ export const deleteContest = async (req: Request, res: Response) => {
 // @desc    Register for contest
 // @route   POST /api/contests/:id/register
 // @access  Private
-export const registerForContest = async (req: Request, res: Response) => {
+export const registerForContest = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: 'Not authorized'
+      });
+      return;
+    }
+
     const contest = await Contest.findById(req.params.id);
 
     if (!contest) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
-        error: 'Contest not found',
+        error: 'Contest not found'
       });
+      return;
     }
 
-    // Check if registration is open
     if (!contest.isRegistrationOpen) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
-        error: 'Registration is closed',
+        error: 'Contest registration is closed'
       });
+      return;
     }
 
+    const userId = req.user._id;
     // Check if user is already registered
-    const isRegistered = contest.participants.some(
-      (p) => p.user.toString() === (req as any).user.id
-    );
-
-    if (isRegistered) {
-      return res.status(400).json({
+    if (contest.participants.some(p => p.user.toString() === userId.toString())) {
+      res.status(400).json({
         success: false,
-        error: 'Already registered for this contest',
+        error: 'Already registered for this contest'
       });
+      return;
     }
 
     contest.participants.push({
-      user: (req as any).user.id,
-      joinedAt: new Date(),
+      user: userId,
       score: 0,
+      joinedAt: new Date()
     });
 
     await contest.save();
 
     res.status(200).json({
       success: true,
-      data: contest,
+      data: contest
     });
   } catch (error) {
+    logger.error('Error registering for contest:', error instanceof Error ? error.message : 'Unknown error');
     res.status(500).json({
       success: false,
-      error: 'Server Error',
+      error: 'Error registering for contest'
     });
   }
 };
@@ -284,16 +303,15 @@ export const updateScores = async (req: Request, res: Response) => {
 };
 
 // Helper function to calculate submission score
-const calculateSubmissionScore = (
-  submission: SubmissionScore,
-  criteria: ScoringCriteria
-): number => {
-  return (
-    submission.accuracy * criteria.accuracy +
-    submission.timeComplexity * criteria.timeComplexity +
-    submission.spaceComplexity * criteria.spaceComplexity +
-    submission.codeQuality * criteria.codeQuality
-  );
+const calculateSubmissionScore = (submission: ISubmission, criteria: IContest['scoringCriteria']): number => {
+  const score: SubmissionScore = {
+    accuracy: submission.testResults.filter(test => test.passed).length / submission.testResults.length * criteria.accuracy,
+    timeComplexity: criteria.timeComplexity * (1 - submission.runtime / 1000),
+    spaceComplexity: criteria.spaceComplexity * (1 - submission.memory / (1024 * 1024)),
+    codeQuality: criteria.codeQuality
+  };
+  
+  return Object.values(score).reduce((acc, val) => acc + val, 0);
 };
 
 // Helper function to get difficulty score
@@ -307,5 +325,21 @@ const getDifficultyScore = (difficulty: string) => {
       return 1.0;
     default:
       return 0;
+  }
+};
+
+export const updateContestScore = async (submission: ISubmission, contest: IContest): Promise<void> => {
+  try {
+    const score = calculateSubmissionScore(submission, contest.scoringCriteria);
+    const participantIndex = contest.participants.findIndex(
+      p => p.user.toString() === submission.user.toString()
+    );
+
+    if (participantIndex !== -1) {
+      contest.participants[participantIndex].score = score;
+      await contest.save();
+    }
+  } catch (error) {
+    logger.error('Error updating contest score:', error instanceof Error ? error.message : 'Unknown error');
   }
 };
