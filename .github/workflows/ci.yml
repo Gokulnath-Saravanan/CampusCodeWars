@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    # Server checks
+    - name: Install server dependencies
+      working-directory: ./server
+      run: npm ci
+
+    - name: Run server linting
+      working-directory: ./server
+      run: npm run lint
+
+    - name: Run server formatting check
+      working-directory: ./server
+      run: npm run format:check
+
+    - name: Run server tests
+      working-directory: ./server
+      run: npm test
+
+    # Client checks
+    - name: Install client dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Run client linting
+      working-directory: ./client
+      run: npm run lint
+
+    - name: Run client formatting check
+      working-directory: ./client
+      run: npm run format:check
+
+    - name: Run client tests
+      working-directory: ./client
+      run: npm test 
