@@ -38,28 +38,30 @@ const ProblemSchema = new Schema<IProblem>(
       type: String,
       required: [true, 'Please add a category'],
     },
-    testCases: [{
-      input: {
-        type: String,
-        required: [true, 'Please add test case input'],
+    testCases: [
+      {
+        input: {
+          type: String,
+          required: [true, 'Please add test case input'],
+        },
+        expectedOutput: {
+          type: String,
+          required: [true, 'Please add expected output'],
+        },
+        isHidden: {
+          type: Boolean,
+          default: false,
+        },
+        timeLimit: {
+          type: Number,
+          default: 1000, // 1 second
+        },
+        memoryLimit: {
+          type: Number,
+          default: 256000, // 256MB
+        },
       },
-      expectedOutput: {
-        type: String,
-        required: [true, 'Please add expected output'],
-      },
-      isHidden: {
-        type: Boolean,
-        default: false,
-      },
-      timeLimit: {
-        type: Number,
-        default: 1000, // 1 second
-      },
-      memoryLimit: {
-        type: Number,
-        default: 256000, // 256MB
-      },
-    }],
+    ],
     sampleInput: {
       type: String,
       required: [true, 'Please add sample input'],

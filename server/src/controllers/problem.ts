@@ -25,7 +25,10 @@ export const createProblem = async (req: AuthRequest, res: Response) => {
       data: problem,
     });
   } catch (error) {
-    logger.error('Error creating problem:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error(
+      'Error creating problem:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return res.status(500).json({
       success: false,
       error: 'Error creating problem',
@@ -68,7 +71,7 @@ export const getProblem = async (req: AuthRequest, res: Response): Promise<void>
 
     // Filter out hidden test cases for non-admin users
     if (req.user?.role !== 'admin') {
-      problem.testCases = problem.testCases.filter(test => !test.isHidden);
+      problem.testCases = problem.testCases.filter((test) => !test.isHidden);
     }
 
     res.json({

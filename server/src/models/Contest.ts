@@ -49,33 +49,39 @@ const ContestSchema = new Schema<IContest>(
       type: Number,
       required: [true, 'Please add duration in minutes'],
     },
-    problems: [{
-      type: Schema.Types.ObjectId,
-      ref: 'Problem',
-      required: [true, 'Please add at least one problem'],
-    }],
-    participants: [{
-      user: {
+    problems: [
+      {
         type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+        ref: 'Problem',
+        required: [true, 'Please add at least one problem'],
       },
-      score: {
-        type: Number,
-        default: 0,
+    ],
+    participants: [
+      {
+        user: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        score: {
+          type: Number,
+          default: 0,
+        },
+        submissions: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: 'Submission',
+          },
+        ],
+        joinedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        rank: {
+          type: Number,
+        },
       },
-      submissions: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Submission',
-      }],
-      joinedAt: {
-        type: Date,
-        default: Date.now,
-      },
-      rank: {
-        type: Number,
-      },
-    }],
+    ],
     isActive: {
       type: Boolean,
       default: false,
@@ -106,7 +112,7 @@ ContestSchema.index({ isActive: 1 });
 ContestSchema.index({ registrationOpen: 1 });
 
 // Middleware to validate start and end times
-ContestSchema.pre('save', function(next) {
+ContestSchema.pre('save', function (next) {
   if (this.startTime >= this.endTime) {
     next(new Error('Start time must be before end time'));
   }
@@ -114,8 +120,10 @@ ContestSchema.pre('save', function(next) {
 });
 
 // Add methods if needed
-ContestSchema.methods.updateParticipantScore = async function(userId: string, newScore: number) {
-  const participant = this.participants.find((p: ContestParticipant) => p.user.toString() === userId);
+ContestSchema.methods.updateParticipantScore = async function (userId: string, newScore: number) {
+  const participant = this.participants.find(
+    (p: ContestParticipant) => p.user.toString() === userId
+  );
   if (participant) {
     participant.score = newScore;
     await this.save();

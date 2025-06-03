@@ -43,8 +43,7 @@ router.get('/global', protect, async (_req: AuthRequest, res: Response): Promise
 // @access  Private
 router.get('/contest/:id', protect, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const contest = await Contest.findById(req.params.id)
-      .populate('participants.user', 'username');
+    const contest = await Contest.findById(req.params.id).populate('participants.user', 'username');
 
     if (!contest) {
       res.status(404).json({
@@ -76,4 +75,4 @@ router.get('/contest/:id', protect, async (req: AuthRequest, res: Response): Pro
   }
 });
 
-export default router; 
+export default router;

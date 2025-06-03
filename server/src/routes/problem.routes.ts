@@ -1,6 +1,12 @@
 import express from 'express';
 import { protect } from '../middleware/auth';
-import { createProblem, getProblem, getProblems, updateProblem, deleteProblem } from '../controllers/problem';
+import {
+  createProblem,
+  getProblem,
+  getProblems,
+  updateProblem,
+  deleteProblem,
+} from '../controllers/problem';
 
 const router = express.Router();
 
@@ -29,4 +35,4 @@ router.put('/:id', protect, updateProblem);
 // @access  Private (Admin/Organizer only)
 router.delete('/:id', protect, deleteProblem);
 
-export default router; 
+export default router;

@@ -1,6 +1,13 @@
 import express from 'express';
 import { protect } from '../middleware/auth';
-import { getContests, getContest, createContest, updateContest, deleteContest, registerForContest } from '../controllers/contest';
+import {
+  getContests,
+  getContest,
+  createContest,
+  updateContest,
+  deleteContest,
+  registerForContest,
+} from '../controllers/contest';
 
 const router = express.Router();
 
@@ -34,4 +41,4 @@ router.delete('/:id', protect, deleteContest);
 // @access  Private
 router.post('/:id/register', protect, registerForContest);
 
-export default router; 
+export default router;

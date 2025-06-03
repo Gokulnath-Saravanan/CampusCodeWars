@@ -31,10 +31,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Please add an email'],
       unique: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Please add a valid email',
-      ],
+      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email'],
     },
     password: {
       type: String,
@@ -65,7 +62,7 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Hash password before saving
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
@@ -76,17 +73,15 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Match password
-UserSchema.methods.matchPassword = async function(candidatePassword: string): Promise<boolean> {
+UserSchema.methods.matchPassword = async function (candidatePassword: string): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 // Sign JWT and return
-UserSchema.methods.getSignedJwtToken = function(): string {
-  return jwt.sign(
-    { id: this._id },
-    process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '30d' }
-  );
+UserSchema.methods.getSignedJwtToken = function (): string {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '30d',
+  });
 };
 
 export default mongoose.model<IUser>('User', UserSchema);

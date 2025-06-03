@@ -24,15 +24,17 @@ connectDB();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) * 60 * 1000 || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX) || 100
+  max: Number(process.env.RATE_LIMIT_MAX) || 100,
 });
 app.use(limiter);
 
@@ -55,7 +57,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   logger.error(err.stack);
   res.status(500).json({
     success: false,
-    error: 'Server Error'
+    error: 'Server Error',
   });
 });
 

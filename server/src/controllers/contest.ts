@@ -2,7 +2,16 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Contest from '../models/Contest';
 import Submission from '../models/Submission';
-import { AuthRequest, ContestQuery, SubmissionScore, ScoringCriteria, IContest, ISubmission, ContestParticipant, TestResult } from '../types';
+import {
+  AuthRequest,
+  ContestQuery,
+  SubmissionScore,
+  ScoringCriteria,
+  IContest,
+  ISubmission,
+  ContestParticipant,
+  TestResult,
+} from '../types';
 import logger from '../utils/logger';
 
 // @desc    Create new contest
@@ -13,7 +22,7 @@ export const createContest = async (req: AuthRequest, res: Response) => {
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: 'Not authorized'
+        error: 'Not authorized',
       });
       return;
     }
@@ -28,7 +37,10 @@ export const createContest = async (req: AuthRequest, res: Response) => {
       data: contest,
     });
   } catch (error) {
-    logger.error('Error creating contest:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error(
+      'Error creating contest:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     res.status(500).json({
       success: false,
       error: 'Error creating contest',
@@ -176,7 +188,7 @@ export const registerForContest = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    if (contest.participants.some(p => p.user.toString() === userId.toString())) {
+    if (contest.participants.some((p) => p.user.toString() === userId.toString())) {
       return res.status(400).json({
         success: false,
         error: 'Already registered for this contest',
@@ -265,9 +277,7 @@ export const updateScores = async (req: Request, res: Response) => {
     const { submissions } = req.body as { submissions: SubmissionData[] };
 
     for (const submission of submissions) {
-      const participant = contest.participants.find(
-        (p) => p.user.toString() === submission.userId
-      );
+      const participant = contest.participants.find((p) => p.user.toString() === submission.userId);
 
       if (participant) {
         const score = calculateSubmissionScore(submission);
@@ -299,7 +309,10 @@ const calculateSubmissionScore = (submission: SubmissionData): number => {
   };
 
   const score = {
-    accuracy: (submission.testResults.filter((test) => test.passed).length / submission.testResults.length) * defaultCriteria.accuracy,
+    accuracy:
+      (submission.testResults.filter((test) => test.passed).length /
+        submission.testResults.length) *
+      defaultCriteria.accuracy,
     timeComplexity: defaultCriteria.timeComplexity * (1 - submission.runtime / 1000),
     spaceComplexity: defaultCriteria.spaceComplexity * (1 - submission.memory / 1000),
     codeQuality: defaultCriteria.codeQuality,
@@ -322,7 +335,10 @@ const getDifficultyScore = (difficulty: string) => {
   }
 };
 
-export const updateContestScore = async (submission: ISubmission, contest: IContest): Promise<void> => {
+export const updateContestScore = async (
+  submission: ISubmission,
+  contest: IContest
+): Promise<void> => {
   try {
     const submissionData: SubmissionData = {
       testResults: submission.testResults,
@@ -332,7 +348,7 @@ export const updateContestScore = async (submission: ISubmission, contest: ICont
     };
     const score = calculateSubmissionScore(submissionData);
     const participantIndex = contest.participants.findIndex(
-      p => p.user.toString() === submission.user.toString()
+      (p) => p.user.toString() === submission.user.toString()
     );
 
     if (participantIndex !== -1) {
@@ -340,7 +356,10 @@ export const updateContestScore = async (submission: ISubmission, contest: ICont
       await contest.save();
     }
   } catch (error) {
-    logger.error('Error updating contest score:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error(
+      'Error updating contest score:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 };
 
@@ -353,7 +372,7 @@ export const updateContestScores = async (contestId: string): Promise<void> => {
       testResults: [],
       runtime: 0,
       memory: 0,
-      userId: participant.user.toString()
+      userId: participant.user.toString(),
     })) as SubmissionData[];
 
     let totalScore = 0;

@@ -13,11 +13,10 @@ import { protect, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
-router.route('/')
-  .get(getContests)
-  .post(protect, authorize('admin'), createContest);
+router.route('/').get(getContests).post(protect, authorize('admin'), createContest);
 
-router.route('/:id')
+router
+  .route('/:id')
   .get(getContest)
   .put(protect, authorize('admin'), updateContest)
   .delete(protect, authorize('admin'), deleteContest);

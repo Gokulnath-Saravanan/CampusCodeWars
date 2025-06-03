@@ -44,7 +44,10 @@ export const submitCode = async (req: AuthRequest, res: Response): Promise<void>
       data: submission,
     });
   } catch (error) {
-    logger.error('Error submitting code:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error(
+      'Error submitting code:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     res.status(500).json({
       success: false,
       error: 'Error submitting code',
@@ -72,7 +75,10 @@ export const getUserSubmissions = async (req: AuthRequest, res: Response): Promi
       data: submissions,
     });
   } catch (error) {
-    logger.error('Error getting user submissions:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error(
+      'Error getting user submissions:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     res.status(500).json({
       success: false,
       error: 'Error getting user submissions',

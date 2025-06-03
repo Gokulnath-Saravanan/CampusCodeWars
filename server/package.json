@@ -9,6 +9,7 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "prettier": "prettier --write \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "jest --passWithNoTests --ci",
