@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html"
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -18,13 +18,38 @@ module.exports = {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
+          950: '#082f49',
+        },
+        secondary: {
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+          800: '#5b21b6',
+          900: '#4c1d95',
+          950: '#2e1065',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+        sans: ['Inter var', 'sans-serif'],
+        mono: ['Fira Code', 'monospace'],
+      },
+      spacing: {
+        '128': '32rem',
+        '144': '36rem',
+      },
+      borderRadius: {
+        '4xl': '2rem',
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'),
+  ],
 } 

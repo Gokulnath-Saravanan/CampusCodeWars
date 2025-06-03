@@ -1,9 +1,8 @@
 import express from 'express';
-import { submitCode, getUserSubmissions, getSubmission } from '../controllers/submission';
 import { protect } from '../middleware/auth';
-import Submission from '../models/Submission';
-import Problem from '../models/Problem';
+import { submitCode, getSubmission, getUserSubmissions } from '../controllers/submission';
 import { AuthRequest } from '../types';
+import Submission from '../models/Submission';
 
 const router = express.Router();
 
@@ -50,8 +49,8 @@ router.get('/problem/:problemId', protect, async (req: AuthRequest, res) => {
   }
 });
 
-router.get('/', protect, getUserSubmissions);
 router.post('/', protect, submitCode);
+router.get('/', protect, getUserSubmissions);
 router.get('/:id', protect, getSubmission);
 
 export default router;

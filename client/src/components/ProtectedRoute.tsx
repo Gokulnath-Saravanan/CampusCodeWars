@@ -1,29 +1,38 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  requiredRole?: string[];
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
-  const location = useLocation();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole,
+}) => {
+  const { user, loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-lg text-gray-600">Loading...</div>
-      </div>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+  if (requiredRole && user && !requiredRole.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

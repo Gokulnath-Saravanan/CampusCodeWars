@@ -6,14 +6,20 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string | undefined) => void;
   language?: string;
+  height?: string;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange, language = 'javascript' }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({
+  value,
+  onChange,
+  language = 'javascript',
+  height = '500px'
+}) => {
   return (
     <Box
       sx={{
         width: '100%',
-        height: '500px',
+        height: height,
         border: '1px solid #ccc',
         borderRadius: '4px',
         overflow: 'hidden',

@@ -1,7 +1,6 @@
-import express, { Response, NextFunction, Request } from 'express';
-import { register, login, getMe } from '../controllers/auth';
+import express from 'express';
 import { protect } from '../middleware/auth';
-import { AuthRequest } from '../types';
+import { register, login, getMe } from '../controllers/auth';
 
 const router = express.Router();
 

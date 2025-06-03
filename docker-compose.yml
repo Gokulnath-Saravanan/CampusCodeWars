@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  api:
-    build: 
+  backend:
+    build:
       context: ./server
       dockerfile: Dockerfile
     ports:
@@ -11,14 +11,13 @@ services:
       - NODE_ENV=development
       - PORT=5000
       - MONGODB_URI=mongodb://mongodb:27017/campuscodewars
-      - JWT_SECRET=your_jwt_secret_here
-      - JWT_EXPIRE=24h
     depends_on:
       - mongodb
     volumes:
       - ./server:/usr/src/app
       - /usr/src/app/node_modules
-    restart: unless-stopped
+    networks:
+      - app-network
 
   mongodb:
     image: mongo:latest
@@ -26,11 +25,12 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    restart: unless-stopped
-
-volumes:
-  mongodb_data:
+    networks:
+      - app-network
 
 networks:
   app-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  mongodb_data: 

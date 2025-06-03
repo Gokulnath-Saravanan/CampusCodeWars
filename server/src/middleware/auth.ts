@@ -1,40 +1,43 @@
-import { Response, NextFunction, Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import User from '../models/User';
-import { AuthRequest, IUser } from '../types';
-import logger from '../utils/logger';
+import User, { IUser } from '../models/User';
+import { AuthRequest } from '../types';
 
-export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  let token: string | undefined;
-
-  if (req.headers.authorization?.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-
-  if (!token) {
-    res.status(401).json({ success: false, error: 'Not authorized to access this route' });
-    return;
-  }
-
+export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined');
-    }
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: string };
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      res.status(401).json({ success: false, error: 'User not found' });
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: 'No token, authorization denied',
+      });
       return;
     }
 
-    (req as AuthRequest).user = user;
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: string };
+
+    // Get user from token
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        message: 'Token is not valid',
+      });
+      return;
+    }
+
+    // Add user to request
+    req.user = user as IUser;
     next();
   } catch (error) {
-    logger.error('Auth middleware error:', error instanceof Error ? error.message : 'Unknown error');
-    res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    res.status(401).json({
+      success: false,
+      message: 'Token is not valid',
+    });
+    return;
   }
 };
 

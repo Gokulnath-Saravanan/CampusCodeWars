@@ -29,7 +29,7 @@ export const register = async (req: Request, res: Response) => {
     // Create token
     const token = user.getSignedJwtToken();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       token,
       user: {
@@ -41,7 +41,7 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Registration error:', error instanceof Error ? error.message : 'Unknown error');
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error registering user',
     });
@@ -57,39 +57,36 @@ export const login = async (req: Request, res: Response) => {
 
     // Validate email & password
     if (!email || !password) {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         error: 'Please provide email and password',
       });
-      return;
     }
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
-      return;
     }
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
-      return;
     }
 
     // Create token
     const token = user.getSignedJwtToken();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       token,
       user: {
@@ -101,7 +98,7 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Login error:', error instanceof Error ? error.message : 'Unknown error');
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error logging in',
     });
@@ -114,30 +111,28 @@ export const login = async (req: Request, res: Response) => {
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         error: 'Not authorized',
       });
-      return;
     }
 
     const user = await User.findById(req.user._id);
 
     if (!user) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         error: 'User not found',
       });
-      return;
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: user,
     });
   } catch (error) {
     logger.error('Get me error:', error instanceof Error ? error.message : 'Unknown error');
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error getting user information',
     });

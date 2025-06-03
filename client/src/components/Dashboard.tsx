@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
-  Grid,
   Paper,
   Typography,
   Button,
@@ -10,6 +9,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  SelectChangeEvent,
+  Grid,
 } from '@mui/material';
 import CodeEditor from './CodeEditor';
 
@@ -89,11 +90,13 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleLanguageChange = (e: SelectChangeEvent) => setLanguage(e.target.value);
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
         {/* Daily Challenge */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={8} component="div">
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h5" color="primary" gutterBottom>
               Daily Challenge
@@ -107,11 +110,7 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ mb: 2 }}>
                   <FormControl sx={{ minWidth: 120, mr: 2 }}>
                     <InputLabel>Language</InputLabel>
-                    <Select
-                      value={language}
-                      label="Language"
-                      onChange={(e) => setLanguage(e.target.value)}
-                    >
+                    <Select value={language} label="Language" onChange={handleLanguageChange}>
                       <MenuItem value="javascript">JavaScript</MenuItem>
                       <MenuItem value="python">Python</MenuItem>
                       <MenuItem value="java">Java</MenuItem>
@@ -132,7 +131,7 @@ const Dashboard: React.FC = () => {
         </Grid>
 
         {/* Leaderboard */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={4} component="div">
           <Paper sx={{ p: 3 }}>
             <Typography variant="h5" color="primary" gutterBottom>
               Leaderboard

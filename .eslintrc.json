@@ -1,33 +1,48 @@
 {
+  "root": true,
   "env": {
-    "browser": true,
-    "es2021": true,
-    "node": true
+    "node": true,
+    "es2021": true
   },
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
-    },
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": ["react", "@typescript-eslint", "prettier"],
+  "plugins": ["@typescript-eslint", "prettier"],
   "rules": {
     "prettier/prettier": "error",
-    "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off"
   },
-  "settings": {
-    "react": {
-      "version": "detect"
+  "overrides": [
+    {
+      "files": ["client/**/*.{ts,tsx}"],
+      "env": {
+        "browser": true
+      },
+      "extends": [
+        "plugin:react/recommended"
+      ],
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "plugins": ["react"],
+      "rules": {
+        "react/react-in-jsx-scope": "off",
+        "react/prop-types": "off"
+      },
+      "settings": {
+        "react": {
+          "version": "detect"
+        }
+      }
     }
-  }
+  ]
 } 
