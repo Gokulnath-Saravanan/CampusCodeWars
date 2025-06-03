@@ -2,8 +2,12 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders main navigation elements', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByText('CampusCodeWars')).toBeInTheDocument();
+  expect(screen.getByText('Login')).toBeInTheDocument();
+  expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  expect(screen.getByText('Problems')).toBeInTheDocument();
+  expect(screen.getByText('Contests')).toBeInTheDocument();
+  expect(screen.getByText('Leaderboard')).toBeInTheDocument();
 });
