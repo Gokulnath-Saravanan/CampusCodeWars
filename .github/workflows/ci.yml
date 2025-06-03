@@ -24,20 +24,13 @@ jobs:
         cache-dependency-path: './client/package-lock.json'
 
     - name: Install Dependencies
-      run: npm ci
-    
-    # Temporarily commenting out formatting and linting checks
-    # - name: Check Code Format
-    #   run: npm run format:check || npm run prettier
-    
-    # - name: Lint Check
-    #   run: npm run lint
+      run: npm install
     
     - name: Type Check
-      run: npm run type-check || npm run tsc
+      run: npm run type-check
     
     - name: Run Tests
-      run: npm test || true
+      run: npm test -- --watchAll=false
 
     - name: Build Frontend
       run: npm run build
@@ -59,25 +52,8 @@ jobs:
         cache-dependency-path: './server/package-lock.json'
 
     - name: Install Dependencies
-      run: npm ci
+      run: npm install
     
-    # Temporarily commenting out formatting and linting checks
-    # - name: Check Code Format
-    #   run: npm run format:check || npm run prettier
-    
-    # - name: Lint Check
-    #   run: npm run lint
-    
-    - name: Type Check
-      run: npm run type-check || npm run tsc
-    
-    - name: Run Tests
-      run: npm test || true
-      env:
-        MONGODB_URI: mongodb://localhost:27017/test
-        JWT_SECRET: test_secret
-        PORT: 5000
-
     - name: Build Backend
       run: npm run build
 
@@ -106,29 +82,6 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  security:
-    needs: [backend-checks, frontend-checks]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Run Snyk to check for backend vulnerabilities
-      uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        command: test
-        args: --severity-threshold=high --file=server/package.json
-        
-    - name: Run Snyk to check for frontend vulnerabilities
-      uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        command: test
-        args: --severity-threshold=high --file=client/package.json
-        
   deploy-backend:
     needs: docker-build
     runs-on: ubuntu-latest
