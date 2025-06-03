@@ -39,9 +39,11 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'your-secret-key', {
-      expiresIn: '30d',
-    });
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '30d' }
+    );
 
     res.status(201).json({
       success: true,
@@ -92,9 +94,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     }
 
     // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'your-secret-key', {
-      expiresIn: '30d',
-    });
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '30d' }
+    );
 
     res.json({
       success: true,
@@ -131,9 +135,7 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
-      id: string;
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: string };
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
@@ -157,4 +159,4 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-export default router;
+export default router; 

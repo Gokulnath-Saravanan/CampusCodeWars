@@ -12,7 +12,7 @@ router.get('/my', protect, async (req: AuthRequest, res) => {
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: 'Not authorized',
+        error: 'Not authorized'
       });
       return;
     }
@@ -32,7 +32,7 @@ router.get('/problem/:problemId', protect, async (req: AuthRequest, res) => {
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: 'Not authorized',
+        error: 'Not authorized'
       });
       return;
     }

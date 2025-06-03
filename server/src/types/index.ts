@@ -118,4 +118,4 @@ export interface ScoringCriteria {
   codeQuality: number;
 }
 
-export type LogArgs = string | number | boolean | object | null | undefined;
+export type LogArgs = string | number | boolean | object | null | undefined; 
