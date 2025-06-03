@@ -33,75 +33,65 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Problem = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const ProblemSchema = new mongoose_1.Schema({
+const problemSchema = new mongoose_1.Schema({
     title: {
         type: String,
-        required: [true, 'Please add a title'],
+        required: [true, 'Problem title is required'],
         unique: true,
         trim: true,
-        maxlength: [100, 'Title cannot be more than 100 characters'],
     },
     description: {
         type: String,
-        required: [true, 'Please add a description'],
+        required: [true, 'Problem description is required'],
     },
     difficulty: {
         type: String,
         enum: ['easy', 'medium', 'hard'],
-        required: [true, 'Please add difficulty level'],
+        required: [true, 'Problem difficulty is required'],
     },
-    category: {
-        type: String,
-        required: [true, 'Please add a category'],
-    },
+    tags: [{
+            type: String,
+            trim: true,
+        }],
     testCases: [{
             input: {
                 type: String,
-                required: [true, 'Please add test case input'],
+                required: [true, 'Test case input is required'],
             },
             expectedOutput: {
                 type: String,
-                required: [true, 'Please add expected output'],
+                required: [true, 'Test case expected output is required'],
             },
             isHidden: {
                 type: Boolean,
                 default: false,
             },
-            timeLimit: {
-                type: Number,
-                default: 1000, // 1 second
-            },
-            memoryLimit: {
-                type: Number,
-                default: 256000, // 256MB
-            },
         }],
-    sampleInput: {
-        type: String,
-        required: [true, 'Please add sample input'],
-    },
-    sampleOutput: {
-        type: String,
-        required: [true, 'Please add sample output'],
-    },
     timeLimit: {
         type: Number,
-        default: 1000, // 1 second
+        default: 1000, // in milliseconds
     },
     memoryLimit: {
         type: Number,
-        default: 256000, // 256MB
+        default: 256, // in MB
     },
     createdBy: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+        type: mongoose_1.Schema.Types.Mixed,
+        required: [true, 'Problem creator is required'],
+    },
+    status: {
+        type: String,
+        enum: ['draft', 'published', 'archived'],
+        default: 'draft',
     },
 }, {
     timestamps: true,
 });
-// Create indexes for efficient querying
-ProblemSchema.index({ difficulty: 1 });
-ProblemSchema.index({ category: 1 });
-exports.default = mongoose_1.default.model('Problem', ProblemSchema);
+// Indexes for faster queries
+problemSchema.index({ title: 1 });
+problemSchema.index({ difficulty: 1 });
+problemSchema.index({ tags: 1 });
+problemSchema.index({ status: 1 });
+exports.Problem = mongoose_1.default.model('Problem', problemSchema);

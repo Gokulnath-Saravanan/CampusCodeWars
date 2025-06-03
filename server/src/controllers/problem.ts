@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import Problem from '../models/Problem';
+import { Problem } from '../models/Problem';
 import { AuthRequest } from '../types';
 import logger from '../utils/logger';
+import { AppError } from '../middleware/errorHandler';
 
 // @desc    Create new problem
 // @route   POST /api/problems
@@ -33,54 +34,89 @@ export const createProblem = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// @desc    Get daily problem
+// @route   GET /api/problems/daily
+// @access  Public
+export const getDailyProblem = async (req: Request, res: Response) => {
+  try {
+    // Get today's date at midnight UTC
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    // Get tomorrow's date at midnight UTC
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Find a problem that was created today
+    let dailyProblem = await Problem.findOne({
+      createdAt: {
+        $gte: today,
+        $lt: tomorrow
+      },
+      status: 'published'
+    });
+
+    // If no problem was created today, get the most recently created problem
+    if (!dailyProblem) {
+      dailyProblem = await Problem.findOne({ status: 'published' })
+        .sort({ createdAt: -1 });
+    }
+
+    if (!dailyProblem) {
+      throw new AppError('No daily problem available', 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: dailyProblem
+    });
+  } catch (error) {
+    logger.error('Error getting daily problem:', error);
+    throw new AppError('Error getting daily problem', 500);
+  }
+};
+
 // @desc    Get all problems
 // @route   GET /api/problems
 // @access  Public
-export const getProblems = async (_req: AuthRequest, res: Response): Promise<void> => {
+export const getProblems = async (req: Request, res: Response) => {
   try {
-    const problems = await Problem.find().select('-testCases');
-    res.json({
+    const problems = await Problem.find({ status: 'published' })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
       success: true,
-      data: problems,
+      data: problems
     });
   } catch (error) {
-    console.error('Get problems error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching problems',
-    });
+    logger.error('Error getting problems:', error);
+    throw new AppError('Error getting problems', 500);
   }
 };
 
 // @desc    Get single problem
 // @route   GET /api/problems/:id
 // @access  Public
-export const getProblem = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProblem = async (req: Request, res: Response) => {
   try {
     const problem = await Problem.findById(req.params.id);
+    
     if (!problem) {
-      res.status(404).json({
-        success: false,
-        message: 'Problem not found',
-      });
-      return;
+      throw new AppError('Problem not found', 404);
     }
 
-    // Filter out hidden test cases for non-admin users
+    // Remove hidden test cases for non-admin users
     if (req.user?.role !== 'admin') {
-      problem.testCases = problem.testCases.filter(test => !test.isHidden);
+      problem.testCases = problem.testCases.filter((test: any) => !test.isHidden);
     }
 
     res.json({
-      success: true,
+      status: 'success',
       data: problem,
     });
   } catch (error) {
-    console.error('Get problem error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching problem',
-    });
+    logger.error('Error getting problem:', error);
+    throw new AppError('Error getting problem', 500);
   }
 };
 
@@ -106,10 +142,8 @@ export const updateProblem = async (req: Request, res: Response) => {
       data: problem,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: 'Server Error',
-    });
+    logger.error('Error updating problem:', error);
+    throw new AppError('Error updating problem', 500);
   }
 };
 
@@ -118,25 +152,18 @@ export const updateProblem = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const deleteProblem = async (req: Request, res: Response) => {
   try {
-    const problem = await Problem.findById(req.params.id);
+    const problem = await Problem.findByIdAndDelete(req.params.id);
 
     if (!problem) {
-      return res.status(404).json({
-        success: false,
-        error: 'Problem not found',
-      });
+      throw new AppError('Problem not found', 404);
     }
 
-    await problem.deleteOne();
-
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: 'Problem deleted successfully',
+      data: {}
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: 'Server Error',
-    });
+    logger.error('Error deleting problem:', error);
+    throw new AppError('Error deleting problem', 500);
   }
 };

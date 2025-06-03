@@ -1,56 +1,84 @@
-import express from 'express';
-import { protect } from '../middleware/auth';
-import { submitCode, getSubmission, getUserSubmissions } from '../controllers/submission';
-import { AuthRequest } from '../types';
-import Submission from '../models/Submission';
+import { Router } from 'express';
+import { auth } from '../middleware/auth';
+import { isAdmin } from '../middleware/isAdmin';
+import { Submission } from '../models/Submission';
+import { AppError } from '../middleware/errorHandler';
 
-const router = express.Router();
+const router = Router();
+
+// Get all submissions (admin only)
+router.get('/', auth, isAdmin, async (req, res) => {
+  try {
+    const submissions = await Submission.find()
+      .populate('userId', 'username')
+      .populate('problemId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      status: 'success',
+      data: submissions,
+    });
+  } catch (error) {
+    throw new AppError('Error fetching submissions', 500);
+  }
+});
 
 // Get user's submissions
-router.get('/my', protect, async (req: AuthRequest, res) => {
+router.get('/my', auth, async (req, res) => {
   try {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: 'Not authorized'
-      });
-      return;
-    }
+    const submissions = await Submission.find({ userId: req.user!._id })
+      .populate('problemId', 'title')
+      .sort({ createdAt: -1 });
 
-    const submissions = await Submission.find({ user: req.user._id })
-      .populate('problem', 'title difficulty')
-      .sort('-createdAt');
-    res.json(submissions);
+    res.json({
+      status: 'success',
+      data: submissions,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching submissions' });
+    throw new AppError('Error fetching submissions', 500);
   }
 });
 
-// Get submissions for a problem
-router.get('/problem/:problemId', protect, async (req: AuthRequest, res) => {
+// Get single submission
+router.get('/:id', auth, async (req, res) => {
   try {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: 'Not authorized'
-      });
-      return;
+    const submission = await Submission.findById(req.params.id)
+      .populate('userId', 'username')
+      .populate('problemId', 'title');
+
+    if (!submission) {
+      throw new AppError('Submission not found', 404);
     }
 
-    const submissions = await Submission.find({
-      problem: req.params.problemId,
-      user: req.user._id,
-    })
-      .populate('problem', 'title difficulty')
-      .sort('-createdAt');
-    res.json(submissions);
+    // Check if user is admin or submission owner
+    if (req.user!.role !== 'admin' && submission.userId.toString() !== req.user!._id.toString()) {
+      throw new AppError('Not authorized to view this submission', 403);
+    }
+
+    res.json({
+      status: 'success',
+      data: submission,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching submissions' });
+    throw new AppError('Error fetching submission', 500);
   }
 });
 
-router.post('/', protect, submitCode);
-router.get('/', protect, getUserSubmissions);
-router.get('/:id', protect, getSubmission);
+// Create submission
+router.post('/', auth, async (req, res) => {
+  try {
+    const submission = await Submission.create({
+      ...req.body,
+      userId: req.user!._id,
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: submission,
+    });
+  } catch (error) {
+    throw new AppError('Error creating submission', 500);
+  }
+});
 
 export default router;

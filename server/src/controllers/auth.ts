@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
-import { AuthRequest } from '../types';
+import { User } from '../models/User';
+import { generateToken } from '../utils/auth';
+import { AppError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
+import { AuthRequest } from '../types';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -10,13 +14,10 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { username, email, password } = req.body;
 
-    // Check if user exists
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
-    if (userExists) {
-      return res.status(400).json({
-        success: false,
-        error: 'User with this email or username already exists',
-      });
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      throw new AppError('User already exists', 400);
     }
 
     // Create user
@@ -26,25 +27,22 @@ export const register = async (req: Request, res: Response) => {
       password,
     });
 
-    // Create token
-    const token = user.getSignedJwtToken();
+    // Generate token
+    const token = generateToken(user._id);
 
-    return res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
+    res.status(201).json({
+      status: 'success',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          role: user.role,
+        },
       },
     });
   } catch (error) {
-    logger.error('Registration error:', error instanceof Error ? error.message : 'Unknown error');
-    return res.status(500).json({
-      success: false,
-      error: 'Error registering user',
-    });
+    throw new AppError('Error registering user', 500);
   }
 };
 
@@ -54,53 +52,60 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    logger.info(`Login attempt for email: ${email}`);
 
-    // Validate email & password
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide email and password',
-      });
-    }
-
-    // Check for user
+    // Check if user exists and explicitly select the password field
     const user = await User.findOne({ email }).select('+password');
-
     if (!user) {
+      logger.info(`No user found with email: ${email}`);
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials',
+        message: 'Invalid credentials'
       });
     }
 
-    // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    logger.info(`User found: ${user.username}, role: ${user.role}`);
+
+    // Check password using bcrypt directly to debug
+    const isMatch = await bcrypt.compare(password, user.password);
+    logger.info(`Password match result: ${isMatch}`);
 
     if (!isMatch) {
+      logger.info('Password does not match');
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials',
+        message: 'Invalid credentials'
       });
     }
 
-    // Create token
-    const token = user.getSignedJwtToken();
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '30d' }
+    );
 
-    return res.status(200).json({
+    // Remove password from response
+    const userResponse = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    };
+
+    logger.info(`Login successful for user: ${user.username}`);
+    res.json({
       success: true,
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      data: {
+        token,
+        user: userResponse
+      }
     });
   } catch (error) {
-    logger.error('Login error:', error instanceof Error ? error.message : 'Unknown error');
-    return res.status(500).json({
+    logger.error('Login error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Error logging in',
+      message: 'Error logging in'
     });
   }
 };

@@ -1,13 +1,15 @@
+import { vi } from 'vitest';
+
 const mockAxios = {
-  create: jest.fn(() => mockAxios),
-  get: jest.fn(() => Promise.resolve({ data: {} })),
-  post: jest.fn(() => Promise.resolve({ data: {} })),
-  put: jest.fn(() => Promise.resolve({ data: {} })),
-  delete: jest.fn(() => Promise.resolve({ data: {} })),
+  create: vi.fn(() => mockAxios),
+  get: vi.fn(() => Promise.resolve({ data: {} })),
+  post: vi.fn(() => Promise.resolve({ data: {} })),
+  put: vi.fn(() => Promise.resolve({ data: {} })),
+  delete: vi.fn(() => Promise.resolve({ data: {} })),
   defaults: { baseURL: '' },
   interceptors: {
-    request: { use: jest.fn(), eject: jest.fn() },
-    response: { use: jest.fn(), eject: jest.fn() },
+    request: { use: vi.fn(), eject: vi.fn() },
+    response: { use: vi.fn(), eject: vi.fn() },
   },
 };
 

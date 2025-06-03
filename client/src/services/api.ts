@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add a request interceptor
+// Add request interceptor to add token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -21,62 +21,56 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Add response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      // Handle specific error cases
-      switch (error.response.status) {
-        case 401:
-          // Unauthorized - clear token and redirect to login
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          break;
-        case 403:
-          // Forbidden - redirect to home
-          window.location.href = '/';
-          break;
-        default:
-          break;
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Only redirect to login if we're not already on the login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
       }
-
-      // Return the error message from the server
-      return Promise.reject(
-        new Error(
-          error.response.data.message || 'An error occurred. Please try again.'
-        )
-      );
     }
-
-    // Network error or other issues
-    return Promise.reject(
-      new Error('Network error. Please check your internet connection.')
-    );
+    return Promise.reject(error.response?.data || error);
   }
 );
 
 // Auth API
-export const login = (email: string, password: string) =>
-  api.post('/auth/login', { email, password });
+export const login = async (email: string, password: string) => {
+  const response = await api.post('/auth/login', { email, password });
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+  }
+  return response;
+};
 
-export const register = (userData: {
+export const register = async (userData: {
   username: string;
   email: string;
   password: string;
   role: string;
-}) => api.post('/auth/register', userData);
+}) => {
+  const response = await api.post('/auth/register', userData);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+  }
+  return response;
+};
 
 export const getCurrentUser = () => api.get('/auth/me');
 
 // Problems API
 export const getProblems = () => api.get('/problems');
 export const getProblem = (id: string) => api.get(`/problems/${id}`);
-export const submitSolution = (
-  problemId: string,
-  code: string,
-  language: string
-) => api.post('/submissions', { problemId, code, language });
+export const submitSolution = (problemId: string, code: string, language: string) =>
+  api.post('/submissions', { problemId, code, language });
 
 // Contests API
 export const getContests = () => api.get('/contests');

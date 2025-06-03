@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface TestResult {
   passed: boolean;
@@ -9,64 +9,48 @@ export interface TestResult {
   memoryUsed: number;
 }
 
-export interface ISubmission extends mongoose.Document {
-  user: mongoose.Types.ObjectId;
-  problem: mongoose.Types.ObjectId;
+export interface ISubmission extends Document {
+  userId: mongoose.Types.ObjectId;
+  problemId: mongoose.Types.ObjectId;
   contestId?: mongoose.Types.ObjectId;
   code: string;
   language: string;
-  status:
-    | 'pending'
-    | 'running'
-    | 'accepted'
-    | 'wrong_answer'
-    | 'time_limit_exceeded'
-    | 'memory_limit_exceeded'
-    | 'runtime_error';
+  status: 'pending' | 'accepted' | 'wrong_answer' | 'runtime_error' | 'compilation_error';
   runtime: number;
   memory: number;
-  testResults: TestResult[];
-  score: number;
+  testCasesPassed: number;
+  totalTestCases: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const submissionSchema = new mongoose.Schema(
+const submissionSchema = new Schema<ISubmission>(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
+    userId: {
+      type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required'],
     },
-    problem: {
-      type: mongoose.Schema.Types.ObjectId,
+    problemId: {
+      type: Schema.Types.ObjectId,
       ref: 'Problem',
-      required: true,
+      required: [true, 'Problem ID is required'],
     },
     contestId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Contest',
     },
     code: {
       type: String,
-      required: true,
+      required: [true, 'Code is required'],
     },
     language: {
       type: String,
-      required: true,
-      enum: ['javascript', 'python', 'java', 'cpp'],
+      required: [true, 'Programming language is required'],
     },
     status: {
       type: String,
-      enum: [
-        'pending',
-        'running',
-        'accepted',
-        'wrong_answer',
-        'time_limit_exceeded',
-        'memory_limit_exceeded',
-        'runtime_error',
-      ],
+      enum: ['pending', 'accepted', 'wrong_answer', 'runtime_error', 'compilation_error'],
       default: 'pending',
     },
     runtime: {
@@ -77,19 +61,13 @@ const submissionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    testResults: [
-      {
-        passed: Boolean,
-        input: String,
-        expectedOutput: String,
-        actualOutput: String,
-        timeUsed: Number,
-        memoryUsed: Number,
-      },
-    ],
-    score: {
+    testCasesPassed: {
       type: Number,
       default: 0,
+    },
+    totalTestCases: {
+      type: Number,
+      required: [true, 'Total test cases count is required'],
     },
   },
   {
@@ -98,7 +76,7 @@ const submissionSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-submissionSchema.index({ user: 1, problem: 1, createdAt: -1 });
-submissionSchema.index({ contestId: 1, user: 1, createdAt: -1 });
+submissionSchema.index({ userId: 1, problemId: 1, createdAt: -1 });
+submissionSchema.index({ contestId: 1, userId: 1, createdAt: -1 });
 
-export default mongoose.model<ISubmission>('Submission', submissionSchema);
+export const Submission = mongoose.model<ISubmission>('Submission', submissionSchema);

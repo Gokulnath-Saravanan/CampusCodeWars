@@ -26,8 +26,13 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const response = await login(email, password);
+      // Redirect based on user role
+      if (response?.user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log in');
     } finally {
@@ -45,29 +50,18 @@ const Login: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <Typography component="h1" variant="h5">
+        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+          <Typography component="h1" variant="h5" align="center" gutterBottom>
             Sign In
           </Typography>
+
           {error && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ mt: 1, width: '100%' }}
-          >
+
+          <Box component="form" onSubmit={handleSubmit}>
             <TextField
               margin="normal"
               required
@@ -101,12 +95,11 @@ const Login: React.FC = () => {
             >
               Sign In
             </Button>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Don&apos;t have an account?{' '}
+            <Box textAlign="center">
               <Link component={RouterLink} to="/register" variant="body2">
-                Sign Up
+                {"Don't have an account? Sign Up"}
               </Link>
-            </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>

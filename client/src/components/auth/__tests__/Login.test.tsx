@@ -1,21 +1,28 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../Login';
-import { AuthProvider } from '../../../contexts/AuthContext';
-
-const MockLogin = () => {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Login />
-      </AuthProvider>
-    </BrowserRouter>
-  );
-};
+import { AuthContext, type AuthContextType } from '../../../contexts/AuthContext';
 
 describe('Login Component', () => {
-  test('renders login form', () => {
-    render(<MockLogin />);
+  const mockAuthContext: AuthContextType = {
+    user: null,
+    token: null,
+    loading: false,
+    isAuthenticated: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
+  };
+
+  it('renders login form', () => {
+    render(
+      <BrowserRouter>
+        <AuthContext.Provider value={mockAuthContext}>
+          <Login />
+        </AuthContext.Provider>
+      </BrowserRouter>
+    );
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
@@ -24,25 +31,58 @@ describe('Login Component', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows validation error for invalid email', async () => {
-    render(<MockLogin />);
+  it('shows validation error for invalid email', async () => {
+    render(
+      <BrowserRouter>
+        <AuthContext.Provider value={mockAuthContext}>
+          <Login />
+        </AuthContext.Provider>
+      </BrowserRouter>
+    );
 
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    fireEvent.blur(emailInput);
 
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
-    fireEvent.click(submitButton);
-
-    // Wait for any error message to appear
-    const errorMessage = await screen.findByRole('alert');
+    const errorMessage = await screen.findByText(/invalid email/i);
     expect(errorMessage).toBeInTheDocument();
   });
 
-  test('shows link to registration page', () => {
-    render(<MockLogin />);
+  it('shows link to registration page', () => {
+    render(
+      <BrowserRouter>
+        <AuthContext.Provider value={mockAuthContext}>
+          <Login />
+        </AuthContext.Provider>
+      </BrowserRouter>
+    );
 
-    // Look for the text parts separately
     expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
     expect(screen.getByText('Sign Up')).toBeInTheDocument();
+  });
+
+  it('handles form submission', async () => {
+    render(
+      <BrowserRouter>
+        <AuthContext.Provider value={mockAuthContext}>
+          <Login />
+        </AuthContext.Provider>
+      </BrowserRouter>
+    );
+
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockAuthContext.login).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123'
+      );
+    });
   });
 });

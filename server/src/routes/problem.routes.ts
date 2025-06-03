@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/auth';
-import { createProblem, getProblem, getProblems, updateProblem, deleteProblem } from '../controllers/problem';
+import { createProblem, getProblem, getProblems, updateProblem, deleteProblem, getDailyProblem } from '../controllers/problem';
 
 const router = express.Router();
 
@@ -8,6 +8,11 @@ const router = express.Router();
 // @desc    Get all problems
 // @access  Private
 router.get('/', protect, getProblems);
+
+// @route   GET /api/problems/daily
+// @desc    Get daily problem
+// @access  Public
+router.get('/daily', getDailyProblem);
 
 // @route   GET /api/problems/:id
 // @desc    Get single problem

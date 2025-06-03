@@ -4,7 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSubmission = exports.getUserSubmissions = exports.submitCode = void 0;
-const Submission_1 = __importDefault(require("../models/Submission"));
+const Submission_1 = require("../models/Submission");
+const errorHandler_1 = require("../middleware/errorHandler");
 const logger_1 = __importDefault(require("../utils/logger"));
 // @desc    Submit code for a problem
 const submitCode = async (req, res) => {
@@ -28,11 +29,11 @@ const submitCode = async (req, res) => {
                 memoryUsed: 1024,
             },
         ];
-        const submission = await Submission_1.default.create({
+        const submission = await Submission_1.Submission.create({
             code,
             language,
-            problem: problemId,
-            user: req.user._id,
+            problemId,
+            userId: req.user._id,
             status: 'completed',
             testResults,
             runtime: testResults.reduce((acc, curr) => acc + curr.timeUsed, 0),
@@ -62,9 +63,9 @@ const getUserSubmissions = async (req, res) => {
             });
             return;
         }
-        const submissions = await Submission_1.default.find({ user: req.user._id })
-            .populate('problem', 'title')
-            .sort('-createdAt');
+        const submissions = await Submission_1.Submission.find({ userId: req.user._id })
+            .populate('problemId', 'title')
+            .sort({ createdAt: -1 });
         res.status(200).json({
             success: true,
             data: submissions,
@@ -81,19 +82,16 @@ const getUserSubmissions = async (req, res) => {
 exports.getUserSubmissions = getUserSubmissions;
 // @desc    Get submission by ID
 const getSubmission = async (req, res) => {
+    var _a, _b;
     try {
-        const submission = await Submission_1.default.findById(req.params.id)
-            .populate('problem', 'title difficulty testCases')
-            .populate('user', 'username');
+        const submission = await Submission_1.Submission.findById(req.params.id)
+            .populate('userId', 'username')
+            .populate('problemId', 'title');
         if (!submission) {
-            res.status(404).json({
-                success: false,
-                message: 'Submission not found',
-            });
-            return;
+            throw new errorHandler_1.AppError('Submission not found', 404);
         }
         // Check if user owns the submission or is admin
-        if (submission.user._id.toString() !== req.user?._id.toString() && req.user?.role !== 'admin') {
+        if (submission.userId.toString() !== ((_a = req.user) === null || _a === void 0 ? void 0 : _a._id.toString()) && ((_b = req.user) === null || _b === void 0 ? void 0 : _b.role) !== 'admin') {
             res.status(403).json({
                 success: false,
                 message: 'Not authorized to view this submission',

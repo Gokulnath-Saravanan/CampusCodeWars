@@ -6,55 +6,39 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateContestScores = exports.updateContestScore = exports.updateScores = exports.getLeaderboard = exports.registerForContest = exports.deleteContest = exports.updateContest = exports.getContest = exports.getContests = exports.createContest = void 0;
 const Contest_1 = __importDefault(require("../models/Contest"));
 const logger_1 = __importDefault(require("../utils/logger"));
+const errorHandler_1 = require("../middleware/errorHandler");
 // @desc    Create new contest
 // @route   POST /api/contests
 // @access  Private/Admin
 const createContest = async (req, res) => {
     try {
-        if (!req.user) {
-            res.status(401).json({
-                success: false,
-                error: 'Not authorized'
-            });
-            return;
-        }
         const contest = await Contest_1.default.create({
             ...req.body,
             createdBy: req.user._id,
         });
         res.status(201).json({
-            success: true,
+            status: 'success',
             data: contest,
         });
     }
     catch (error) {
-        logger_1.default.error('Error creating contest:', error instanceof Error ? error.message : 'Unknown error');
-        res.status(500).json({
-            success: false,
-            error: 'Error creating contest',
-        });
+        throw new errorHandler_1.AppError('Error creating contest', 500);
     }
 };
 exports.createContest = createContest;
 // @desc    Get all contests
 // @route   GET /api/contests
 // @access  Private
-const getContests = async (_req, res) => {
+const getContests = async (req, res) => {
     try {
-        const contests = await Contest_1.default.find()
-            .populate('problems', 'title difficulty points')
-            .select('-participants');
+        const contests = await Contest_1.default.find().sort({ startTime: -1 });
         res.json({
-            success: true,
+            status: 'success',
             data: contests,
         });
     }
     catch (error) {
-        console.error('Get contests error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching contests',
-        });
+        throw new errorHandler_1.AppError('Error fetching contests', 500);
     }
 };
 exports.getContests = getContests;
@@ -141,6 +125,7 @@ exports.deleteContest = deleteContest;
 // @route   POST /api/contests/:id/register
 // @access  Private
 const registerForContest = async (req, res) => {
+    var _a;
     try {
         const contest = await Contest_1.default.findById(req.params.id);
         if (!contest) {
@@ -161,7 +146,7 @@ const registerForContest = async (req, res) => {
                 error: 'Contest is full',
             });
         }
-        const userId = req.user?._id;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!userId) {
             return res.status(401).json({
                 success: false,

@@ -11,6 +11,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./utils/logger"));
+const app_config_1 = __importDefault(require("./config/app.config"));
 // Import routes
 const auth_1 = __importDefault(require("./routes/auth"));
 const problem_1 = __importDefault(require("./routes/problem"));
@@ -53,8 +54,27 @@ app.use((err, req, res, next) => {
         error: 'Server Error'
     });
 });
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    logger_1.default.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+const server = app.listen(app_config_1.default.port, () => {
+    logger_1.default.info(`Server running in ${app_config_1.default.env} mode on port ${app_config_1.default.port}`);
 });
-exports.default = app;
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+    logger_1.default.error('Unhandled Rejection:', err);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+});
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    logger_1.default.error('Uncaught Exception:', err);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+});
+// Handle SIGTERM
+process.on('SIGTERM', () => {
+    logger_1.default.info('SIGTERM received. Shutting down gracefully');
+    server.close(() => {
+        logger_1.default.info('Process terminated');
+        process.exit(0);
+    });
+});
+exports.default = server;

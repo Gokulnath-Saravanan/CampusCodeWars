@@ -1,85 +1,76 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { TestCase } from '../types';
+
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
 
 export interface IProblem extends Document {
   title: string;
   description: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
+  tags: string[];
   testCases: TestCase[];
-  sampleInput: string;
-  sampleOutput: string;
   timeLimit: number;
   memoryLimit: number;
-  createdBy: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId | 'AI_GENERATOR';
+  status: 'draft' | 'published' | 'archived';
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ProblemSchema = new Schema<IProblem>(
+const problemSchema = new Schema<IProblem>(
   {
     title: {
       type: String,
-      required: [true, 'Please add a title'],
+      required: [true, 'Problem title is required'],
       unique: true,
       trim: true,
-      maxlength: [100, 'Title cannot be more than 100 characters'],
     },
     description: {
       type: String,
-      required: [true, 'Please add a description'],
+      required: [true, 'Problem description is required'],
     },
     difficulty: {
       type: String,
       enum: ['easy', 'medium', 'hard'],
-      required: [true, 'Please add difficulty level'],
+      required: [true, 'Problem difficulty is required'],
     },
-    category: {
+    tags: [{
       type: String,
-      required: [true, 'Please add a category'],
-    },
+      trim: true,
+    }],
     testCases: [{
       input: {
         type: String,
-        required: [true, 'Please add test case input'],
+        required: [true, 'Test case input is required'],
       },
       expectedOutput: {
         type: String,
-        required: [true, 'Please add expected output'],
+        required: [true, 'Test case expected output is required'],
       },
       isHidden: {
         type: Boolean,
         default: false,
       },
-      timeLimit: {
-        type: Number,
-        default: 1000, // 1 second
-      },
-      memoryLimit: {
-        type: Number,
-        default: 256000, // 256MB
-      },
     }],
-    sampleInput: {
-      type: String,
-      required: [true, 'Please add sample input'],
-    },
-    sampleOutput: {
-      type: String,
-      required: [true, 'Please add sample output'],
-    },
     timeLimit: {
       type: Number,
-      default: 1000, // 1 second
+      default: 1000, // in milliseconds
     },
     memoryLimit: {
       type: Number,
-      default: 256000, // 256MB
+      default: 256, // in MB
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      type: Schema.Types.Mixed,
+      required: [true, 'Problem creator is required'],
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'published', 'archived'],
+      default: 'draft',
     },
   },
   {
@@ -87,8 +78,10 @@ const ProblemSchema = new Schema<IProblem>(
   }
 );
 
-// Create indexes for efficient querying
-ProblemSchema.index({ difficulty: 1 });
-ProblemSchema.index({ category: 1 });
+// Indexes for faster queries
+problemSchema.index({ title: 1 });
+problemSchema.index({ difficulty: 1 });
+problemSchema.index({ tags: 1 });
+problemSchema.index({ status: 1 });
 
-export default mongoose.model<IProblem>('Problem', ProblemSchema);
+export const Problem = mongoose.model<IProblem>('Problem', problemSchema);

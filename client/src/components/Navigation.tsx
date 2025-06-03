@@ -52,6 +52,7 @@ const Navigation: React.FC = () => {
     { title: 'Problems', path: '/problems' },
     { title: 'Contests', path: '/contests' },
     { title: 'Leaderboard', path: '/leaderboard' },
+    ...(user?.role === 'admin' ? [{ title: 'Admin', path: '/admin' }] : []),
   ];
 
   return (

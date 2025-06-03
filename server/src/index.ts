@@ -1,68 +1,34 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import connectDB from './config/db';
+import { createServer } from './app';
 import logger from './utils/logger';
+import config from './config/app.config';
 
-// Import routes
-import authRoutes from './routes/auth';
-import problemRoutes from './routes/problem';
-import contestRoutes from './routes/contest.routes';
-import submissionRoutes from './routes/submission';
+const app = createServer();
 
-// Load env vars
-dotenv.config();
-
-// Create Express app
-const app = express();
-
-// Connect to database
-connectDB();
-
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW) * 60 * 1000 || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX) || 100
+const server = app.listen(config.port, () => {
+  logger.info(`Server running in ${config.env} mode on port ${config.port}`);
 });
-app.use(limiter);
 
-// Body parser
-app.use(express.json());
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err: Error) => {
+  logger.error('Unhandled Rejection:', err);
+  // Close server & exit process
+  server.close(() => process.exit(1));
+});
 
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// Handle uncaught exceptions
+process.on('uncaughtException', (err: Error) => {
+  logger.error('Uncaught Exception:', err);
+  // Close server & exit process
+  server.close(() => process.exit(1));
+});
 
-// Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/problems', problemRoutes);
-app.use('/api/contests', contestRoutes);
-app.use('/api/submissions', submissionRoutes);
-
-// Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error(err.stack);
-  res.status(500).json({
-    success: false,
-    error: 'Server Error'
+// Handle SIGTERM
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received. Shutting down gracefully');
+  server.close(() => {
+    logger.info('Process terminated');
+    process.exit(0);
   });
 });
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
-
-export default app;
+export default server;

@@ -4,8 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteProblem = exports.updateProblem = exports.getProblem = exports.getProblems = exports.createProblem = void 0;
-const Problem_1 = __importDefault(require("../models/Problem"));
+const Problem_1 = require("../models/Problem");
 const logger_1 = __importDefault(require("../utils/logger"));
+const errorHandler_1 = require("../middleware/errorHandler");
 // @desc    Create new problem
 // @route   POST /api/problems
 // @access  Private/Admin
@@ -17,7 +18,7 @@ const createProblem = async (req, res) => {
                 error: 'Not authorized',
             });
         }
-        const problem = await Problem_1.default.create({
+        const problem = await Problem_1.Problem.create({
             ...req.body,
             createdBy: req.user._id,
         });
@@ -38,20 +39,23 @@ exports.createProblem = createProblem;
 // @desc    Get all problems
 // @route   GET /api/problems
 // @access  Public
-const getProblems = async (_req, res) => {
+const getProblems = async (req, res) => {
+    var _a;
     try {
-        const problems = await Problem_1.default.find().select('-testCases');
+        const problems = await Problem_1.Problem.find({ status: 'published' });
+        // Remove hidden test cases for non-admin users
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== 'admin') {
+            problems.forEach(problem => {
+                problem.testCases = problem.testCases.filter((test) => !test.isHidden);
+            });
+        }
         res.json({
-            success: true,
+            status: 'success',
             data: problems,
         });
     }
     catch (error) {
-        console.error('Get problems error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching problems',
-        });
+        throw new errorHandler_1.AppError('Error fetching problems', 500);
     }
 };
 exports.getProblems = getProblems;
@@ -59,30 +63,23 @@ exports.getProblems = getProblems;
 // @route   GET /api/problems/:id
 // @access  Public
 const getProblem = async (req, res) => {
+    var _a;
     try {
-        const problem = await Problem_1.default.findById(req.params.id);
+        const problem = await Problem_1.Problem.findById(req.params.id);
         if (!problem) {
-            res.status(404).json({
-                success: false,
-                message: 'Problem not found',
-            });
-            return;
+            throw new errorHandler_1.AppError('Problem not found', 404);
         }
-        // Filter out hidden test cases for non-admin users
-        if (req.user?.role !== 'admin') {
-            problem.testCases = problem.testCases.filter(test => !test.isHidden);
+        // Remove hidden test cases for non-admin users
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== 'admin') {
+            problem.testCases = problem.testCases.filter((test) => !test.isHidden);
         }
         res.json({
-            success: true,
+            status: 'success',
             data: problem,
         });
     }
     catch (error) {
-        console.error('Get problem error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching problem',
-        });
+        throw new errorHandler_1.AppError('Error fetching problem', 500);
     }
 };
 exports.getProblem = getProblem;
@@ -91,7 +88,7 @@ exports.getProblem = getProblem;
 // @access  Private/Admin
 const updateProblem = async (req, res) => {
     try {
-        const problem = await Problem_1.default.findByIdAndUpdate(req.params.id, req.body, {
+        const problem = await Problem_1.Problem.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true,
         });
@@ -119,7 +116,7 @@ exports.updateProblem = updateProblem;
 // @access  Private/Admin
 const deleteProblem = async (req, res) => {
     try {
-        const problem = await Problem_1.default.findById(req.params.id);
+        const problem = await Problem_1.Problem.findById(req.params.id);
         if (!problem) {
             return res.status(404).json({
                 success: false,

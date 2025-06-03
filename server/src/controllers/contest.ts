@@ -1,60 +1,42 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Contest from '../models/Contest';
-import Submission from '../models/Submission';
+import { Submission } from '../models/Submission';
 import { AuthRequest, ContestQuery, SubmissionScore, ScoringCriteria, IContest, ISubmission, ContestParticipant, TestResult } from '../types';
 import logger from '../utils/logger';
+import { AppError } from '../middleware/errorHandler';
 
 // @desc    Create new contest
 // @route   POST /api/contests
 // @access  Private/Admin
-export const createContest = async (req: AuthRequest, res: Response) => {
+export const createContest = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: 'Not authorized'
-      });
-      return;
-    }
-
     const contest = await Contest.create({
       ...req.body,
-      createdBy: req.user._id,
+      createdBy: req.user!._id,
     });
 
     res.status(201).json({
-      success: true,
+      status: 'success',
       data: contest,
     });
   } catch (error) {
-    logger.error('Error creating contest:', error instanceof Error ? error.message : 'Unknown error');
-    res.status(500).json({
-      success: false,
-      error: 'Error creating contest',
-    });
+    throw new AppError('Error creating contest', 500);
   }
 };
 
 // @desc    Get all contests
 // @route   GET /api/contests
 // @access  Private
-export const getContests = async (_req: AuthRequest, res: Response): Promise<void> => {
+export const getContests = async (req: Request, res: Response) => {
   try {
-    const contests = await Contest.find()
-      .populate('problems', 'title difficulty points')
-      .select('-participants');
-
+    const contests = await Contest.find().sort({ startTime: -1 });
     res.json({
-      success: true,
+      status: 'success',
       data: contests,
     });
   } catch (error) {
-    console.error('Get contests error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching contests',
-    });
+    throw new AppError('Error fetching contests', 500);
   }
 };
 
