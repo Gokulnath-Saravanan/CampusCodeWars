@@ -151,11 +151,7 @@ const Register: React.FC = () => {
             >
               Sign Up
             </Button>
-            <Button
-              fullWidth
-              variant="text"
-              onClick={() => navigate('/login')}
-            >
+            <Button fullWidth variant="text" onClick={() => navigate('/login')}>
               Already have an account? Sign In
             </Button>
           </Box>
@@ -165,4 +161,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;

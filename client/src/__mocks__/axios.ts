@@ -7,8 +7,8 @@ const mockAxios = {
   defaults: { baseURL: '' },
   interceptors: {
     request: { use: jest.fn(), eject: jest.fn() },
-    response: { use: jest.fn(), eject: jest.fn() }
-  }
+    response: { use: jest.fn(), eject: jest.fn() },
+  },
 };
 
-export default mockAxios; 
+export default mockAxios;

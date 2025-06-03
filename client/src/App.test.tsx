@@ -9,5 +9,7 @@ test('renders main navigation elements', () => {
   expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Problems' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Contests' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Leaderboard' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Leaderboard' })
+  ).toBeInTheDocument();
 });

@@ -30,7 +30,7 @@ const ProblemCreate: React.FC = () => {
   const [description, setDescription] = useState('');
   const [difficulty, setDifficulty] = useState('medium');
   const [testCases, setTestCases] = useState<TestCase[]>([
-    { input: '', expectedOutput: '', isHidden: false }
+    { input: '', expectedOutput: '', isHidden: false },
   ]);
   const [sampleCode, setSampleCode] = useState('');
 
@@ -42,7 +42,7 @@ const ProblemCreate: React.FC = () => {
         description,
         difficulty,
         testCases,
-        sampleCode
+        sampleCode,
       });
       navigate('/problems');
     } catch (error) {
@@ -51,7 +51,10 @@ const ProblemCreate: React.FC = () => {
   };
 
   const handleAddTestCase = () => {
-    setTestCases([...testCases, { input: '', expectedOutput: '', isHidden: false }]);
+    setTestCases([
+      ...testCases,
+      { input: '', expectedOutput: '', isHidden: false },
+    ]);
   };
 
   const handleTestCaseChange = (
@@ -106,7 +109,12 @@ const ProblemCreate: React.FC = () => {
           <Box sx={{ mt: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Test Cases
-              <IconButton color="primary" onClick={handleAddTestCase} size="small" sx={{ ml: 1 }}>
+              <IconButton
+                color="primary"
+                onClick={handleAddTestCase}
+                size="small"
+                sx={{ ml: 1 }}
+              >
                 <AddIcon />
               </IconButton>
             </Typography>
@@ -117,7 +125,9 @@ const ProblemCreate: React.FC = () => {
                     fullWidth
                     label="Input"
                     value={testCase.input}
-                    onChange={(e) => handleTestCaseChange(index, 'input', e.target.value)}
+                    onChange={(e) =>
+                      handleTestCaseChange(index, 'input', e.target.value)
+                    }
                     multiline
                     rows={2}
                   />
@@ -127,19 +137,33 @@ const ProblemCreate: React.FC = () => {
                     fullWidth
                     label="Expected Output"
                     value={testCase.expectedOutput}
-                    onChange={(e) => handleTestCaseChange(index, 'expectedOutput', e.target.value)}
+                    onChange={(e) =>
+                      handleTestCaseChange(
+                        index,
+                        'expectedOutput',
+                        e.target.value
+                      )
+                    }
                     multiline
                     rows={2}
                   />
                 </Grid>
                 <Grid item xs={12} md={2}>
                   <FormControl fullWidth>
-                    <InputLabel id={`hidden-label-${index}`}>Visibility</InputLabel>
+                    <InputLabel id={`hidden-label-${index}`}>
+                      Visibility
+                    </InputLabel>
                     <Select
                       labelId={`hidden-label-${index}`}
                       value={testCase.isHidden ? 'hidden' : 'visible'}
                       label="Visibility"
-                      onChange={(e) => handleTestCaseChange(index, 'isHidden', e.target.value === 'hidden')}
+                      onChange={(e) =>
+                        handleTestCaseChange(
+                          index,
+                          'isHidden',
+                          e.target.value === 'hidden'
+                        )
+                      }
                     >
                       <MenuItem value="visible">Visible</MenuItem>
                       <MenuItem value="hidden">Hidden</MenuItem>
@@ -161,7 +185,7 @@ const ProblemCreate: React.FC = () => {
               onChange={(value) => setSampleCode(value || '')}
               theme="vs-dark"
               options={{
-                minimap: { enabled: false }
+                minimap: { enabled: false },
               }}
             />
           </Box>
@@ -179,4 +203,4 @@ const ProblemCreate: React.FC = () => {
   );
 };
 
-export default ProblemCreate; 
+export default ProblemCreate;

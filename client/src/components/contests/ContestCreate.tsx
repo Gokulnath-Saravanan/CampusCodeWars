@@ -111,4 +111,4 @@ const ContestCreate: React.FC = () => {
   );
 };
 
-export default ContestCreate; 
+export default ContestCreate;

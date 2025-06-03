@@ -71,7 +71,11 @@ export const AuthProvider: React.FC<{
     }
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ) => {
     try {
       const response = await api.post('/auth/register', {
         username,
@@ -108,4 +112,4 @@ export const AuthProvider: React.FC<{
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export default AuthContext; 
+export default AuthContext;

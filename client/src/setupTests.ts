@@ -7,5 +7,5 @@ import { TextEncoder, TextDecoder } from 'util';
 
 Object.assign(global, {
   TextEncoder,
-  TextDecoder: TextDecoder as typeof global.TextDecoder
+  TextDecoder: TextDecoder as typeof global.TextDecoder,
 });

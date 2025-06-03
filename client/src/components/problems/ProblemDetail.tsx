@@ -182,7 +182,9 @@ const ProblemDetail: React.FC = () => {
                 {example.explanation && (
                   <>
                     <Typography variant="subtitle2">Explanation:</Typography>
-                    <Typography variant="body2">{example.explanation}</Typography>
+                    <Typography variant="body2">
+                      {example.explanation}
+                    </Typography>
                   </>
                 )}
               </Paper>
@@ -296,4 +298,4 @@ const ProblemDetail: React.FC = () => {
   );
 };
 
-export default ProblemDetail; 
+export default ProblemDetail;

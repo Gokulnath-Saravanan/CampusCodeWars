@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import axios from 'axios';
 
 interface User {
@@ -12,7 +18,11 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logout: () => void;
 }
 
@@ -47,8 +57,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
-  const register = async (username: string, email: string, password: string) => {
-    const { data } = await axios.post('/api/auth/register', { username, email, password });
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ) => {
+    const { data } = await axios.post('/api/auth/register', {
+      username,
+      email,
+      password,
+    });
     localStorage.setItem('token', data.token);
     setUser(data.user);
   };

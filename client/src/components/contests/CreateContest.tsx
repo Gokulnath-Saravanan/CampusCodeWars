@@ -290,11 +290,7 @@ const CreateContest: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={loading}
-                >
+                <Button type="submit" variant="contained" disabled={loading}>
                   {loading ? 'Creating...' : 'Create Contest'}
                 </Button>
               </Box>
@@ -306,4 +302,4 @@ const CreateContest: React.FC = () => {
   );
 };
 
-export default CreateContest; 
+export default CreateContest;

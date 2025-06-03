@@ -101,9 +101,10 @@ const Leaderboard: React.FC = () => {
                       <EmojiEventsIcon
                         sx={{
                           color: getMedalColor(entry.rank),
-                          fontSize: entry.rank === 1
-                            ? '24px'
-                            : entry.rank === 2
+                          fontSize:
+                            entry.rank === 1
+                              ? '24px'
+                              : entry.rank === 2
                               ? '20px'
                               : '16px',
                           verticalAlign: 'middle',
@@ -129,4 +130,4 @@ const Leaderboard: React.FC = () => {
   );
 };
 
-export default Leaderboard; 
+export default Leaderboard;

@@ -96,4 +96,4 @@ export const getGlobalLeaderboard = () => api.get('/leaderboard');
 export const getContestLeaderboard = (contestId: string) =>
   api.get(`/contests/${contestId}/leaderboard`);
 
-export default api; 
+export default api;

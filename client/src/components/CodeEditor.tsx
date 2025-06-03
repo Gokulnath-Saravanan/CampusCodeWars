@@ -13,7 +13,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   value,
   onChange,
   language = 'javascript',
-  height = '500px'
+  height = '500px',
 }) => {
   return (
     <Box

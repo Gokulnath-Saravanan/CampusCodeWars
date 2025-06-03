@@ -135,7 +135,7 @@ const ContestDetail: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setContest((prev) => prev ? { ...prev, isRegistered: true } : null);
+        setContest((prev) => (prev ? { ...prev, isRegistered: true } : null));
       }
     } catch (error) {
       console.error('Error registering for contest:', error);
@@ -164,7 +164,7 @@ const ContestDetail: React.FC = () => {
   }
 
   type StatusColor = 'info' | 'success' | 'default';
-  
+
   const getStatusColor = (status: string): StatusColor => {
     switch (status) {
       case 'upcoming':
@@ -300,7 +300,9 @@ const ContestDetail: React.FC = () => {
                     {participant.rank}
                   </TableCell>
                   <TableCell>{participant.username}</TableCell>
-                  <TableCell align="right">{participant.problemsSolved}</TableCell>
+                  <TableCell align="right">
+                    {participant.problemsSolved}
+                  </TableCell>
                   <TableCell align="right">{participant.totalPoints}</TableCell>
                 </TableRow>
               ))}
@@ -350,4 +352,4 @@ const ContestDetail: React.FC = () => {
   );
 };
 
-export default ContestDetail; 
+export default ContestDetail;

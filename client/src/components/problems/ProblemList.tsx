@@ -142,12 +142,7 @@ const ProblemList: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   {problem.tags.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      size="small"
-                      sx={{ mr: 0.5 }}
-                    />
+                    <Chip key={tag} label={tag} size="small" sx={{ mr: 0.5 }} />
                   ))}
                 </TableCell>
                 <TableCell align="right">{problem.solvedCount}</TableCell>
@@ -171,4 +166,4 @@ const ProblemList: React.FC = () => {
   );
 };
 
-export default ProblemList; 
+export default ProblemList;

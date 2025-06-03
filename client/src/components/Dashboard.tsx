@@ -90,7 +90,8 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleLanguageChange = (e: SelectChangeEvent) => setLanguage(e.target.value);
+  const handleLanguageChange = (e: SelectChangeEvent) =>
+    setLanguage(e.target.value);
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -110,7 +111,11 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ mb: 2 }}>
                   <FormControl sx={{ minWidth: 120, mr: 2 }}>
                     <InputLabel>Language</InputLabel>
-                    <Select value={language} label="Language" onChange={handleLanguageChange}>
+                    <Select
+                      value={language}
+                      label="Language"
+                      onChange={handleLanguageChange}
+                    >
                       <MenuItem value="javascript">JavaScript</MenuItem>
                       <MenuItem value="python">Python</MenuItem>
                       <MenuItem value="java">Java</MenuItem>
@@ -122,7 +127,12 @@ const Dashboard: React.FC = () => {
                   onChange={(value) => setCode(value || '')}
                   language={language}
                 />
-                <Button variant="contained" color="primary" onClick={handleSubmit} sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                  sx={{ mt: 2 }}
+                >
                   Submit Solution
                 </Button>
               </>
