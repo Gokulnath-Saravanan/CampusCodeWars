@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import logger from './utils/logger';
+import { Request, Response, NextFunction } from 'express';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -53,11 +54,11 @@ app.use('/api/contests', contestRoutes);
 app.use('/api/submissions', submissionRoutes);
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error(err.stack);
   res.status(500).json({
     success: false,
-    error: 'Server Error',
+    error: 'Server Error'
   });
 });
 

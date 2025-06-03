@@ -1,33 +1,62 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { Response } from 'express';
 import User from '../models/User';
 import Contest from '../models/Contest';
 import { protect } from '../middleware/auth';
 import { AuthRequest } from '../types';
+import Submission from '../models/Submission';
 
-const router = express.Router();
+interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  totalScore: number;
+  problemsSolved: number;
+  contestsParticipated: number;
+}
+
+const router = Router();
 
 // @route   GET /api/leaderboard/global
 // @desc    Get global leaderboard
 // @access  Private
 router.get('/global', protect, async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const users = await User.find()
-      .select('username totalPoints problemsSolved rank')
-      .sort('-totalPoints')
-      .limit(100);
-
-    // Update ranks
-    const leaderboard = users.map((user, index) => ({
-      rank: index + 1,
-      username: user.username,
-      totalPoints: user.totalPoints,
-      problemsSolved: user.problemsSolved,
-    }));
+    const leaderboard: LeaderboardEntry[] = await User.aggregate([
+      {
+        $lookup: {
+          from: 'submissions',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'submissions'
+        }
+      },
+      {
+        $project: {
+          username: 1,
+          totalScore: { $sum: '$submissions.score' },
+          problemsSolved: {
+            $size: {
+              $setUnion: '$submissions.problemId'
+            }
+          },
+          contestsParticipated: {
+            $size: {
+              $setUnion: '$submissions.contestId'
+            }
+          }
+        }
+      },
+      {
+        $sort: {
+          totalScore: -1,
+          problemsSolved: -1
+        }
+      }
+    ]);
 
     res.json({
       success: true,
-      data: leaderboard,
+      data: leaderboard
     });
   } catch (error) {
     console.error('Get global leaderboard error:', error);

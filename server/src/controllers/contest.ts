@@ -13,6 +13,9 @@ import {
   TestResult,
 } from '../types';
 import logger from '../utils/logger';
+import Problem from '../models/Problem';
+import User from '../models/User';
+import { ContestStatus } from '../types';
 
 // @desc    Create new contest
 // @route   POST /api/contests
@@ -322,14 +325,14 @@ const calculateSubmissionScore = (submission: SubmissionData): number => {
 };
 
 // Helper function to get difficulty score
-const getDifficultyScore = (difficulty: string) => {
-  switch (difficulty) {
+const getDifficultyScore = (difficulty: string): number => {
+  switch (difficulty.toLowerCase()) {
     case 'easy':
-      return 0.3;
+      return 1;
     case 'medium':
-      return 0.6;
+      return 2;
     case 'hard':
-      return 1.0;
+      return 3;
     default:
       return 0;
   }
