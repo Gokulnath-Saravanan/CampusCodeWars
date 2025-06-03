@@ -5,9 +5,9 @@ import App from './App';
 test('renders main navigation elements', () => {
   render(<App />);
   expect(screen.getByText('CampusCodeWars')).toBeInTheDocument();
-  expect(screen.getByText('Login')).toBeInTheDocument();
-  expect(screen.getByText('Dashboard')).toBeInTheDocument();
-  expect(screen.getByText('Problems')).toBeInTheDocument();
-  expect(screen.getByText('Contests')).toBeInTheDocument();
-  expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Problems' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Contests' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Leaderboard' })).toBeInTheDocument();
 });
