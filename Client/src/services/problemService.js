@@ -32,9 +32,15 @@ export const updateProblem = async (id, problemData) => {
 export const getAllProblems = async () => {
   try {
     const response = await axiosInstance.get("/problems");
-    return response.data;
+
+    if (!response.data || !response.data.success) {
+      throw new Error(response.data?.message || "Failed to fetch problems");
+    }
+
+    return response.data.data;
   } catch (error) {
-    throw new Error(error.response?.data.message || "Failed to fetch problems");
+    console.error("Error fetching problems:", error);
+    throw new Error(error.response?.data?.message || "Server configuration error");
   }
 };
 

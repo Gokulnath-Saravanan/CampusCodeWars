@@ -12,6 +12,7 @@ function Navbar() {
     try {
       await logout();
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
@@ -32,36 +33,22 @@ function Navbar() {
           </Link>
         </div>
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <img
-              src="/add_problem.png"
-              alt="Add Problem Icon"
-              className="h-6 w-6"
-            />
-            <Link to="/add-problem" className="hover:text-gray-400">
-              Add Problem
-            </Link>
-          </div>
-          <div className="flex items-center space-x-2">
-            <img
-              src="/my_problems.png"
-              alt="My Problems Icon"
-              className="h-6 w-6"
-            />
-            <Link to="/my-problems" className="hover:text-gray-400">
-              My Problems
-            </Link>
-          </div>
-          <div className="flex items-center space-x-2">
-            <img
-              src="/online_compiler.png"
-              alt="Online Compiler Icon"
-              className="h-6 w-6"
-            />
-            <Link to="/online-compiler" className="hover:text-gray-400">
-              Online Compiler
-            </Link>
-          </div>
+          <Link to="/leaderboard" className="hover:text-gray-400">
+            Leaderboard
+          </Link>
+          <Link to="/online-compiler" className="hover:text-gray-400">
+            Online Compiler
+          </Link>
+          {user?.role === "admin" && (
+            <>
+              <Link to="/add-problem" className="hover:text-gray-400">
+                Add Problem
+              </Link>
+              <Link to="/my-problems" className="hover:text-gray-400">
+                My Problems
+              </Link>
+            </>
+          )}
           <Menu as="div" className="relative">
             <Menu.Button className="flex items-center space-x-2 hover:text-gray-400">
               <img
@@ -122,7 +109,7 @@ function Navbar() {
                       onClick={handleLogout}
                       className={`${
                         active ? "bg-gray-600" : ""
-                      } flex items-center w-full text-left px-4 py-2 text-sm`}
+                      } flex items-center px-4 py-2 text-sm w-full`}
                     >
                       <img
                         src="/logout_icon.png"

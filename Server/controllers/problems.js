@@ -156,14 +156,35 @@ export const generateProblem = async (req, res) => {
 // Get all problems (with role-based filtering)
 export const getAllProblems = async (req, res) => {
   try {
-    const query = req.user.role === 'admin' ? {} : { isDaily: true };
-    const problems = await Problem.find(query)
-      .sort({ createdAt: -1 });
+    let query = {};
     
-    res.status(200).json(problems);
+    // If not admin, only return problems that are either daily challenges
+    // or have been marked as visible to all users
+    if (req.user && req.user.role !== 'admin') {
+      query = { 
+        $or: [
+          { isDaily: true },
+          { isPublished: true }
+        ]
+      };
+    }
+
+    const problems = await Problem.find(query)
+      .select('-test_cases') // Don't send test cases to client for security
+      .populate('author', 'userName email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: problems
+    });
   } catch (error) {
-    console.error("Error fetching problems:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error fetching problems:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching problems',
+      error: error.message
+    });
   }
 };
 

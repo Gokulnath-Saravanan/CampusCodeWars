@@ -18,23 +18,34 @@ router.post("/generate", authMiddleware, adminMiddleware, generateProblem);
 router.put("/:id", authMiddleware, adminMiddleware, updateProblem);
 router.delete("/:id", authMiddleware, adminMiddleware, deleteProblem);
 
-// Get all problems based on user role
-router.get("/", authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role === "admin") {
-      const problems = await Problem.find().sort({ createdAt: -1 });
-      return res.json(problems);
-    } else {
-      const problems = await Problem.find({ author: req.user._id }).sort({
-        createdAt: -1,
+// Toggle problem publication status
+router.patch(
+  "/:id/toggle-visibility",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const problem = await Problem.findById(req.params.id);
+      if (!problem) {
+        return res.status(404).json({ message: "Problem not found" });
+      }
+
+      problem.isPublished = !problem.isPublished;
+      await problem.save();
+
+      res.json({
+        message: "Problem visibility updated",
+        isPublished: problem.isPublished,
       });
-      return res.json(problems);
+    } catch (error) {
+      console.error("Error toggling problem visibility:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-  } catch (error) {
-    console.error("Error fetching problems:", error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
+
+// Get all problems (with role-based filtering)
+router.get("/", authMiddleware, getAllProblems);
 
 // Get problem by ID
 router.get("/:id", authMiddleware, getProblemById);

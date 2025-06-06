@@ -78,7 +78,7 @@ router.get("/getUserCode", authMiddleware, async (req, res) => {
 });
 
 // Signup
-router.post("/signUp", async (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const {
       userName,
@@ -121,18 +121,31 @@ router.post("/signUp", async (req, res) => {
       },
     });
 
+    // Fix: Properly format JWT sign parameters
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      {
+        userId: user._id,
+        userRole: user.role
+      },
       process.env.SECRET_KEY,
-      { expiresIn: "1d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
     );
-    user.token = token;
-    user.password = undefined;
 
-    res.status(200).json({ message: "You have successfully registered!", user });
+    // Don't send password in response
+    const userResponse = {
+      _id: user._id,
+      userName: user.userName,
+      email: user.email,
+      role: user.role
+    };
+
+    res.status(201).json({
+      token,
+      user: userResponse
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).send("Internal server error");
+    console.error("Signup error:", error);
+    res.status(500).json({ message: "Server error during signup" });
   }
 });
 

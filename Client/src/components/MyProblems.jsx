@@ -19,15 +19,9 @@ function MyProblems() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Remove /api prefix as it's already in baseURL
-      const endpoint = isAdmin ? '/problems' : `/problems/user/${user._id}`;
-      console.log('Fetching from endpoint:', endpoint);
-
-      const response = await axiosInstance.get(endpoint);
-      
-      if (response.data) {
-        setProblems(response.data);
+      const response = await axiosInstance.get('/problems');
+      if (response.data?.success) {
+        setProblems(response.data.data);
       }
     } catch (err) {
       console.error('Error fetching problems:', err);
@@ -40,15 +34,23 @@ function MyProblems() {
   const toggleDailyChallenge = async (problemId) => {
     try {
       await axiosInstance.patch(`/problems/${problemId}/toggle-daily`);
-      fetchProblems(); // Refresh the list
+      fetchProblems();
     } catch (err) {
       console.error("Error toggling daily challenge:", err);
     }
   };
 
+  const toggleVisibility = async (problemId) => {
+    try {
+      await axiosInstance.patch(`/problems/${problemId}/toggle-visibility`);
+      fetchProblems();
+    } catch (err) {
+      console.error("Error toggling problem visibility:", err);
+    }
+  };
+
   const handleDelete = async (problemId) => {
     if (!window.confirm("Are you sure you want to delete this problem?")) return;
-
     try {
       await axiosInstance.delete(`/problems/${problemId}`);
       setProblems(problems.filter((p) => p._id !== problemId));
@@ -62,7 +64,7 @@ function MyProblems() {
       <div className="min-h-screen bg-gray-900">
         <Navbar />
         <div className="pt-20 flex justify-center items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="text-white">Loading...</div>
         </div>
       </div>
     );
@@ -71,23 +73,21 @@ function MyProblems() {
   return (
     <div className="min-h-screen bg-gray-900">
       <Navbar />
-      <div className="pt-20 px-4 max-w-7xl mx-auto">
-        <div className="bg-gray-800 rounded-lg shadow-xl p-6">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-white">
-              {isAdmin ? "Problem Management" : "My Problems"}
-            </h1>
-            <div className="flex gap-4">
-              {problems.length > 0 && (
-                <span className="text-gray-400">
-                  Total Problems: {problems.length}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {problems.length === 0 ? (
-            <div className="text-center py-12">
+      <div className="pt-20 container mx-auto px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">My Problems</h1>
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/add-problem")}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Add New Problem
+            </button>
+          )}
+        </div>
+        <div className="mt-6">
+          {!problems.length ? (
+            <div className="text-center py-10">
               <p className="text-gray-400 text-lg">No problems found</p>
             </div>
           ) : (
@@ -117,7 +117,7 @@ function MyProblems() {
 
                     <div className="space-y-3">
                       {isAdmin && (
-                        <div className="flex items-center">
+                        <div className="flex items-center space-x-4">
                           <label className="flex items-center space-x-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -127,14 +127,20 @@ function MyProblems() {
                             />
                             <span className="text-gray-300">Daily Challenge</span>
                           </label>
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={problem.isPublished}
+                              onChange={() => toggleVisibility(problem._id)}
+                              className="w-4 h-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-300">Published</span>
+                          </label>
                         </div>
                       )}
 
                       <div className="flex items-center space-x-2 text-sm text-gray-400">
-                        <span>
-                          Created:{" "}
-                          {new Date(problem.createdAt).toLocaleDateString()}
-                        </span>
+                        <span>Created: {new Date(problem.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
 
@@ -146,9 +152,7 @@ function MyProblems() {
                         Delete
                       </button>
                       <button
-                        onClick={() =>
-                          navigate(`/my-problems/${problem._id}/update`)
-                        }
+                        onClick={() => navigate(`/my-problems/${problem._id}/update`)}
                         className="px-3 py-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                       >
                         Edit

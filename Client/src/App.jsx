@@ -19,6 +19,7 @@ import UpdateProblem from "./components/UpdateProblem";
 import ProblemDetail from "./components/ProblemDetail";
 import OnlineCompiler from "./components/OnlineCompiler";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedAdminRoute from "./components/auth/ProtectedAdminRoute";
 
 function App() {
   return (
@@ -46,18 +47,43 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/online-compiler" element={<OnlineCompiler />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/my-problems" element={<MyProblems />} />
-          <Route path="/my-problems/:id/update" element={<UpdateProblem />} />
-          <Route path="/add-problem" element={<AddProblem />} />
           <Route path="/edit-profile" element={<EditProfile />} />
-          <Route path="/problems/:id" element={<ProblemDetail />} />
+          <Route path="/problem/:id" element={<ProblemDetail />} />
+          <Route path="/leaderboard" element={<div>Leaderboard</div>} />
         </Route>
 
-        <Route path="/online-compiler" element={<OnlineCompiler />} /></Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/add-problem"
+            element={
+              <ProtectedAdminRoute>
+                <AddProblem />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/my-problems"
+            element={
+              <ProtectedAdminRoute>
+                <MyProblems />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/my-problems/:id/update"
+            element={
+              <ProtectedAdminRoute>
+                <UpdateProblem />
+              </ProtectedAdminRoute>
+            }
+          />
+        </Route>
+      </Routes>
     </div>
   );
 }

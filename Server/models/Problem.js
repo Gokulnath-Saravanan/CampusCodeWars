@@ -67,6 +67,10 @@ const ProblemSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPublished: {
+      type: Boolean,
+      default: true,
+    },
     generatedBy: {
       type: String,
       enum: ["admin", "gemini", null],
