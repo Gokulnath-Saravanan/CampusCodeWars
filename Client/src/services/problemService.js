@@ -14,7 +14,7 @@ export const getUserProblems = async () => {
 export const getProblemById = async (id) => {
   try {
     const response = await axiosInstance.get(`/problems/${id}`);
-    return response.data;
+    return response.data.data; // Return the data property from the response
   } catch (error) {
     throw new Error(error.response?.data.message || "Failed to fetch problem");
   }

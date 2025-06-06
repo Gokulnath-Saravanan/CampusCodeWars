@@ -1,12 +1,13 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000/api',  // Updated port to 3000
-  headers: {
-    'Content-Type': 'application/json'
-  },
+  baseURL: baseURL + '/api',
   withCredentials: true,
-  timeout: 10000  // Increased timeout for better reliability
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Request interceptor
@@ -39,6 +40,12 @@ axiosInstance.interceptors.response.use(
       timestamp: new Date().toISOString()
     };
     console.error('Response error:', errorDetails);
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
