@@ -37,10 +37,28 @@ export const getAllProblems = async () => {
       throw new Error(response.data?.message || "Failed to fetch problems");
     }
 
-    return response.data.data;
+    // Sort problems by creation date, newest first
+    const problems = response.data.data.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    return problems;
   } catch (error) {
     console.error("Error fetching problems:", error);
-    throw new Error(error.response?.data?.message || "Server configuration error");
+    throw new Error(error.response?.data?.message || "Failed to fetch problems");
+  }
+};
+
+export const getVisibleProblems = async () => {
+  try {
+    const response = await axiosInstance.get("/problems/visible");
+    if (!response.data || !response.data.success) {
+      throw new Error(response.data?.message || "Failed to fetch problems");
+    }
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching visible problems:", error);
+    throw new Error(error.response?.data?.message || "Failed to fetch problems");
   }
 };
 

@@ -19,6 +19,12 @@ import executeJava from "./Compiler/executeJava.js";
 import generateInputFile from "./Compiler/generateInputFile.js";
 import { authMiddleware } from "./middleware/auth.js";
 
+// Import all models to ensure they're registered
+import "./models/user.js";
+import "./models/Problem.js";
+import "./models/Solution.js";
+import "./models/userCode.js";
+
 const app = express();
 
 // CORS configuration

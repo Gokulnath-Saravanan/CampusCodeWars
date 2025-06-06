@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Problem from "../models/Problem.js";
+import Solution from "../models/Solution.js";
 
 // Initialize Gemini with the correct model configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -158,20 +159,19 @@ export const getAllProblems = async (req, res) => {
   try {
     let query = {};
     
-    // If not admin, only return problems that are either daily challenges
-    // or have been marked as visible to all users
+    // If not admin, only show published problems and daily challenges
     if (req.user && req.user.role !== 'admin') {
       query = { 
         $or: [
-          { isDaily: true },
-          { isPublished: true }
+          { isPublished: true },
+          { isDaily: true }
         ]
       };
     }
 
     const problems = await Problem.find(query)
       .select('-test_cases') // Don't send test cases to client for security
-      .populate('author', 'userName email')
+      .populate('author', 'userName')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -191,21 +191,43 @@ export const getAllProblems = async (req, res) => {
 // Get problem by ID (with auth check)
 export const getProblemById = async (req, res) => {
   try {
-    const problem = await Problem.findById(req.params.id);
-    if (!problem) {
-      return res.status(404).json({ message: "Problem not found" });
-    }
+    const problem = await Problem.findById(req.params.id)
+      .populate('author', 'userName');
 
-    // Admin can access all problems, others only daily problems
-    if (!problem.isDaily && req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "This problem is not available" 
+    if (!problem) {
+      return res.status(404).json({
+        success: false,
+        message: 'Problem not found'
       });
     }
 
-    res.status(200).json(problem);
+    // If user is not admin and problem is not published/daily
+    if (req.user.role !== 'admin' && !problem.isPublished && !problem.isDaily) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    // Fetch solutions separately
+    const solutions = await Solution.find({ problem: problem._id })
+      .populate('user', 'userName')
+      .select('-code'); // Don't send solution code for security
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...problem.toObject(),
+        solutions: solutions
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error fetching problem:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching problem',
+      error: error.message
+    });
   }
 };
 
