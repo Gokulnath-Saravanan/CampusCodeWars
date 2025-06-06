@@ -1,8 +1,50 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Problem from "../models/Problem.js";
 
-// Initialize Gemini
+// Initialize Gemini with the correct model configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const MODEL_NAME = "gemini-1.0-pro"; // Use specific version instead of environment variable
+
+// Common prompt templatefor consistent problem generation
+const generatePromptTemplate = (mode, difficulty, tags, customPrompt) => {
+  if (mode === 'quick') {
+    return `You are a competitive programming problem generator. Create a ${difficulty} difficulty coding problem related to: ${tags.join(', ')}.
+Output only a JSON object with no additional text. Structure:
+{
+  "title": "Short, descriptive title",
+  "description": "Clear problem statement",
+  "input_format": "Input specification",
+  "output_format": "Output specification",
+  "constraints": "Numerical and logical constraints",
+  "examples": [
+    {
+      "input": "Example input",
+      "output": "Example output",
+      "explanation": "Clear explanation"
+    }
+  ],
+  "test_cases": [
+    {
+      "input": "Test input",
+      "output": "Expected output"
+    }
+  ]
+}`;
+  } else {
+    return `${customPrompt}
+
+Please ensure your response is a valid JSON object with exactly this structure:
+{
+  "title": "Problem title",
+  "description": "Detailed problem description",
+  "input_format": "Description of input format",
+  "output_format": "Description of expected output format",
+  "constraints": "List of constraints",
+  "examples": [{"input": "", "output": "", "explanation": ""}],
+  "test_cases": [{"input": "", "output": ""}]
+}`;
+  }
+};
 
 // Add a problem (Admin only)
 export const addProblem = async (req, res) => {
@@ -28,70 +70,72 @@ export const addProblem = async (req, res) => {
   }
 };
 
-// Generate problem using Gemini AI (Admin only or Automated)
+// Generate problem using Gemini AI (Admin only)
 export const generateProblem = async (req, res) => {
   try {
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is not configured');
     }
 
-    const { mode, difficulty, tags, customPrompt } = req.body;
-    console.log('Generate request:', { mode, difficulty, tags, customPrompt });
+    // Validate request
+    const { mode, difficulty = 'medium', tags = [], customPrompt } = req.body;
+    if (!mode || (mode === 'custom' && !customPrompt)) {
+      return res.status(400).json({
+        message: "Invalid request. Mode is required and customPrompt is required for custom mode."
+      });
+    }    // Get the model
+    const model = genAI.getGenerativeModel({ 
+      model: MODEL_NAME,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.8,
+        maxOutputTokens: 2048,
+      }
+    });
 
-    // Use a valid model name and ensure it's compatible with generateContent
-    const modelName = "gemini-pro"; // or "gemini-1.5-pro-latest"
-    const model = genAI.getGenerativeModel({ model: modelName });
+    // Generate the prompt
+    const prompt = generatePromptTemplate(mode, difficulty, tags, customPrompt);
 
-    // Construct prompt
-    let prompt = mode === 'quick'
-      ? `Generate a ${difficulty} difficulty coding problem with tags: ${tags.join(', ')}. 
-         Please format your response as a valid JSON object with these fields:
-         title, description, inputFormat, outputFormat, constraints, examples (array of {input, output, explanation}), testCases (array of {input, output})`
-      : customPrompt;
-
-    // Generate content
-    let result;
-    try {
-      result = await model.generateContent(prompt);
-    } catch (geminiError) {
-      console.error('Gemini API error:', geminiError);
-      throw new Error(`Gemini API request failed: ${geminiError.message}`);
-    }
+    // Generate content using the correct API structure
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }]
+    });
 
     if (!result || !result.response) {
-      throw new Error('Gemini API returned an empty response');
+      throw new Error('No response from Gemini AI');
+    }    // Extract and parse JSON from response
+    const text = await result.response.text();
+    console.log('Generated text:', text);
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in AI response');
     }
 
-    const text = result.response.text();
-    console.log('Generated text:', text);
-
-    // Extract JSON from response
     let parsedProblem;
     try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
       parsedProblem = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      throw new Error(`Failed to parse generated content as JSON: ${parseError.message}`);
+      throw new Error(`Failed to parse AI response as JSON: ${parseError.message}`);
     }
 
     // Validate required fields
-    const requiredFields = ['title', 'description', 'inputFormat', 'outputFormat', 'constraints', 'examples', 'testCases'];
+    const requiredFields = ['title', 'description', 'input_format', 'output_format', 'examples', 'test_cases'];
     const missingFields = requiredFields.filter(field => !parsedProblem[field]);
     if (missingFields.length > 0) {
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
-    // Create problem document
+    // Create and save the problem
     const problemData = {
       ...parsedProblem,
-      difficulty: difficulty || 'medium',
-      tags: tags || [],
+      difficulty: difficulty,
+      tags: tags,
       author: req.user._id,
-      isDaily: false
+      isDaily: false,
+      generatedBy: 'gemini'
     };
 
     const newProblem = new Problem(problemData);
@@ -109,12 +153,13 @@ export const generateProblem = async (req, res) => {
   }
 };
 
-// Get all daily problems
+// Get all problems (with role-based filtering)
 export const getAllProblems = async (req, res) => {
   try {
-    const problems = await Problem.find({ isDaily: true })
-      .select('-testCases') // Exclude test cases from list view
+    const query = req.user.role === 'admin' ? {} : { isDaily: true };
+    const problems = await Problem.find(query)
       .sort({ createdAt: -1 });
+    
     res.status(200).json(problems);
   } catch (error) {
     console.error("Error fetching problems:", error);
@@ -130,7 +175,7 @@ export const getProblemById = async (req, res) => {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    // Check if problem is daily challenge or user is admin
+    // Admin can access all problems, others only daily problems
     if (!problem.isDaily && req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: "This problem is not available" 
@@ -151,10 +196,9 @@ export const updateProblem = async (req, res) => {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    if (problem.author.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "You can only update your own problems" });
+    // Only admin or problem author can update
+    if (req.user.role !== 'admin' && problem.author.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized to update this problem" });
     }
 
     const updatedProblem = await Problem.findByIdAndUpdate(
@@ -164,6 +208,7 @@ export const updateProblem = async (req, res) => {
     );
     res.status(200).json(updatedProblem);
   } catch (error) {
+    console.error("Error updating problem:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -176,15 +221,15 @@ export const deleteProblem = async (req, res) => {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    if (problem.author.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "You can only delete your own problems" });
+    // Only admin or problem author can delete
+    if (req.user.role !== 'admin' && problem.author.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized to delete this problem" });
     }
 
     await Problem.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Problem deleted successfully" });
   } catch (error) {
+    console.error("Error deleting problem:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -192,9 +237,11 @@ export const deleteProblem = async (req, res) => {
 // Get problems by user ID
 export const getUserProblems = async (req, res) => {
   try {
-    const problems = await Problem.find({ author: req.user.id });
+    const problems = await Problem.find({ author: req.user.id })
+      .sort({ createdAt: -1 });
     res.status(200).json(problems);
   } catch (error) {
+    console.error("Error fetching user problems:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

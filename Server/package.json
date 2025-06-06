@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "create-admin": "node scripts/createAdmin.js"
+    "create-admin": "node scripts/createAdmin.js",
+    "dev": "node index.js",
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@huggingface/inference": "^4.0.2",
     "backend": "file:",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
@@ -22,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.2",
     "nodemailer": "^6.9.14",
+    "openai": "^5.1.0",
     "server": "file:",
     "uuid": "^10.0.0"
   }
