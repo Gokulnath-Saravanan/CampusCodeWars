@@ -6,7 +6,9 @@ import cookieParser from "cookie-parser";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import "dotenv/config";
+import rateLimit from 'express-rate-limit';
 import dbConnect from "./database/db.js";
+import mongoose from "mongoose";
 import problemRoutes from "./routes/problems.js";
 import User from "./models/user.js";
 import userRoutes from "./routes/user.js";
@@ -27,9 +29,35 @@ import "./models/userCode.js";
 
 const app = express();
 
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
+// More strict rate limiting for authentication routes
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 login attempts per hour
+  message: 'Too many login attempts from this IP, please try again after an hour',
+});
+
+// Apply stricter rate limiting to auth routes
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+
 // CORS configuration
 app.use(cors({
-  origin: true, // Allow all origins during testing
+  origin: [
+    'http://localhost:5173',
+    'https://campus-code-wars.vercel.app'
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -305,38 +333,84 @@ app.post("/api/run", async (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "healthy",
-    message: "Server is running",
-    timestamp: new Date(),
-    database: "connected"
-  });
+// Health check endpoint - place this before other routes
+app.get("/health", async (req, res) => {
+  try {
+    // Check database connection
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
+    // Basic memory usage info
+    const memoryUsage = process.memoryUsage();
+    
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      database: {
+        status: dbStatus
+      },
+      server: {
+        uptime: process.uptime(),
+        memory: {
+          heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+          heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'unhealthy',
+      error: error.message
+    });
+  }
 });
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+  });
   next();
 });
 
-// Error logging middleware
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ 
-    message: "Internal server error",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  
+  // Handle different types of errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Validation Error',
+      details: Object.values(err.errors).map(e => e.message)
+    });
+  }
+  
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      error: 'Invalid token',
+      message: 'Your session has expired. Please login again.'
+    });
+  }
+  
+  // Default error response
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Move these route handlers before the app.listen call
+// Auth routes (no auth required)
+app.use("/api/auth", userRoutes);
+
+// Protected routes (auth required)
 app.use("/api", authMiddleware);
 app.use("/api/problems", problemRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/submissions", submissionRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

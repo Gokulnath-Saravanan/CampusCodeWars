@@ -6,10 +6,10 @@ services:
       context: ./Server
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "3000:3000"
     environment:
       - NODE_ENV=production
-      - PORT=5000
+      - PORT=3000
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}
       - EMAIL=${EMAIL}

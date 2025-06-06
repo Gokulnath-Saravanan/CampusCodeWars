@@ -5,142 +5,121 @@ import { login } from "../services/authService";
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
     try {
       const response = await login(email, password);
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      console.log("Login successful:", response);
       navigate("/home");
-    } catch (err) {
-      setError("Invalid email or password");
-      console.error("Login error:", err);
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "An error occurred during login. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#e9dad2] text-white overflow-hidden">
-      <header className="flex items-center justify-between p-4 bg-gray-800">
-        <div className="flex items-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
           <img
+            className="mx-auto h-12 w-auto"
             src="/CampusCodeWars.png"
-            alt="CampusCodeWars Logo"
-            className="h-8 w-8 mr-2"
+            alt="CampusCodeWars"
           />
-          <div className="text-2xl font-bold">CampusCodeWars</div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            Sign in to your account
+          </h2>
         </div>
-        <Link
-          to="/online-compiler"
-          className="group flex items-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
-          Online Compiler
-        </Link>
-      </header>
-      <main className="flex w-full h-screen ">
-        <div className="w-2/5 flex items-center justify-center p-10 bg-gray-800 h-full">
-          <div className="w-full max-w-md space-y-8">
-            <div className="text-center">
-              <h2 className="mt-6 text-3xl font-extrabold">Welcome!</h2>
-              <p className="mt-2 text-sm">
-                Access your account in seconds.
-                <br /> Don&apos;t have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="font-medium text-blue-500 hover:text-blue-400"
-                >
-                  Sign up
-                </Link>
-                .
-              </p>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                </div>
+              </div>
             </div>
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-              <div className="rounded-md shadow-sm -space-y-px">
-                <div>
-                  <label htmlFor="email" className="sr-only">
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="relative">
-                  <label htmlFor="password" className="sr-only">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-sm leading-5"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <img
-                        src="https://www.svgrepo.com/show/348348/eye-crossed.svg"
-                        alt="Hide Password"
-                        className="h-5 w-5 text-gray-500"
-                      />
-                    ) : (
-                      <img
-                        src="https://www.svgrepo.com/show/103061/eye.svg"
-                        alt="Show Password"
-                        className="h-5 w-5 text-gray-500"
-                      />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <Link
-                    to="/forgot-password"
-                    className="font-medium text-blue-500 hover:text-blue-400"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <button
-                  type="submit"
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Sign in to your account
-                </button>
-              </div>
-            </form>
+          )}
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                to="/forgot-password"
+                className="font-medium text-blue-400 hover:text-blue-300"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                isLoading
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
+          </div>
+        </form>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-400">
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="font-medium text-blue-400 hover:text-blue-300"
+            >
+              Sign up
+            </Link>
+          </p>
         </div>
-        <div className="w-4/10 flex items-center justify-center bg-[#e8d9d4] h-full">
-          <img
-            src="/Stu.jpg"
-            alt="Illustration"
-            className="h-auto max-h-full w-full"
-          />
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

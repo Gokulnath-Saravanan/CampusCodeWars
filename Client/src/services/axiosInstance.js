@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const baseURL = import.meta.env.VITE_API_URL || 'https://campus-code-wars-backend.onrender.com';
+console.log('API Base URL:', baseURL);
 
 const axiosInstance = axios.create({
-  baseURL: baseURL + '/api',
+  baseURL: `${baseURL}/api`,  // Add /api prefix to all requests
   withCredentials: true,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,13 +29,21 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor with improved error logging
+// Response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response) => {
+    console.log(`Response from ${response.config.url}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data
+    });
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
     const errorDetails = {
-      url: error.config?.url,
-      method: error.config?.method,
+      url: originalRequest?.url,
+      method: originalRequest?.method,
       status: error.response?.status,
       message: error.message,
       data: error.response?.data,
@@ -41,12 +51,34 @@ axiosInstance.interceptors.response.use(
     };
     console.error('Response error:', errorDetails);
 
+    // Handle authentication errors
     if (error.response?.status === 401) {
+      // Clear authentication data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Redirect to login page if not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
-    return Promise.reject(error);
+    
+    // Network errors
+    if (error.message === 'Network Error') {
+      console.error('Network Error: Unable to connect to the server');
+      // You might want to show a user-friendly error message here
+    }
+
+    // Timeout errors
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout: The server took too long to respond');
+      // You might want to show a user-friendly error message here
+    }
+
+    return Promise.reject({
+      ...error,
+      details: errorDetails
+    });
   }
 );
 

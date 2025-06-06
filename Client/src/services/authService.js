@@ -3,8 +3,11 @@ import axiosInstance from "./axiosInstance";
 
 export const login = async (email, password) => {
   try {
-    const response = await axiosInstance.post(`/login`, { email, password });
-    localStorage.setItem("token", response.data.token); // Save token to localStorage
+    const response = await axiosInstance.post(`/auth/login`, { email, password });
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
     return response.data;
   } catch (error) {
     console.error("Error logging in:", error);
@@ -14,7 +17,7 @@ export const login = async (email, password) => {
 
 export const signUp = async (userData) => {
   try {
-    const response = await axiosInstance.post(`/signUp`, userData);
+    const response = await axiosInstance.post(`/auth/signup`, userData);
     return response.data;
   } catch (error) {
     console.error("Error signing up:", error);
@@ -24,17 +27,22 @@ export const signUp = async (userData) => {
 
 export const logout = async () => {
   try {
-    const response = await axiosInstance.post(`/logout`);
+    const response = await axiosInstance.post(`/auth/logout`);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     return response.data;
   } catch (error) {
     console.error("Error logging out:", error);
+    // Still remove local storage items even if server request fails
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     throw error;
   }
 };
 
 export const forgotPassword = async (email) => {
   try {
-    const response = await axiosInstance.post(`/forgot-password`, { email });
+    const response = await axiosInstance.post(`/auth/forgot-password`, { email });
     return response.data;
   } catch (error) {
     console.error("Error requesting password reset:", error);
@@ -42,12 +50,9 @@ export const forgotPassword = async (email) => {
   }
 };
 
-export const resetPassword = async (token, newPassword) => {
+export const resetPassword = async (token, password) => {
   try {
-    const response = await axiosInstance.post(`/reset-password`, {
-      token,
-      newPassword,
-    });
+    const response = await axiosInstance.post(`/auth/reset-password/${token}`, { password });
     return response.data;
   } catch (error) {
     console.error("Error resetting password:", error);

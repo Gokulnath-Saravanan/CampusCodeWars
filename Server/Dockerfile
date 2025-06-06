@@ -30,11 +30,11 @@ RUN mkdir -p Compiler/codes Compiler/inputs Compiler/outputs && \
 USER node
 
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD node -e "fetch('http://localhost:' + (process.env.PORT || 5000) + '/health').then(r => process.exit(r.ok ? 0 : 1))"
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/health || exit 1
 
 # Start the application
 CMD ["npm", "start"]
