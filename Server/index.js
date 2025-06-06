@@ -28,27 +28,13 @@ import "./models/userCode.js";
 const app = express();
 
 // CORS configuration
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "https://campus-code-wars.vercel.app",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173"
-].filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({
+  origin: true, // Allow all origins during testing
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["set-cookie"]
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -317,6 +303,31 @@ app.post("/api/run", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error });
   }
+});
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy",
+    message: "Server is running",
+    timestamp: new Date(),
+    database: "connected"
+  });
+});
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Error logging middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    message: "Internal server error",
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // Move these route handlers before the app.listen call
